@@ -1,12 +1,12 @@
 "use node";
 
-import { action } from "./_generated/server";
+import { action, ActionCtx } from "./_generated/server";
 import { v } from "convex/values";
 import crypto from "crypto";
 import { internal } from "./_generated/api";
 
 // Action for sign up (uses Node.js crypto)
-export const signUp = action({
+export const signUp: any = action({
   args: {
     email: v.string(),
     name: v.string(),
@@ -43,7 +43,7 @@ export const signUp = action({
 });
 
 // Action for sign in (uses Node.js crypto)
-export const signIn = action({
+export const signIn: any = action({
   args: {
     email: v.string(),
     password: v.string(),

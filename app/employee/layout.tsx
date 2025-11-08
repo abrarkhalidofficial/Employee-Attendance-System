@@ -1,9 +1,14 @@
-import type { ReactNode } from "react"
-import { ResponsiveSidebar } from "@/components/responsive-sidebar"
+"use client";
+
+import type { ReactNode } from "react";
+import { ResponsiveSidebar } from "@/components/responsive-sidebar";
+import { ProtectedRoute } from "@/components/protected-route";
 
 const employeeNav = (
   <nav className="p-6 space-y-4">
-    <h2 className="text-lg font-bold text-sidebar-foreground">Employee Portal</h2>
+    <h2 className="text-lg font-bold text-sidebar-foreground">
+      Employee Portal
+    </h2>
     <ul className="space-y-2">
       <li>
         <a
@@ -39,8 +44,12 @@ const employeeNav = (
       </li>
     </ul>
   </nav>
-)
+);
 
 export default function EmployeeLayout({ children }: { children: ReactNode }) {
-  return <ResponsiveSidebar nav={employeeNav}>{children}</ResponsiveSidebar>
+  return (
+    <ProtectedRoute requiredRole="employee">
+      <ResponsiveSidebar nav={employeeNav}>{children}</ResponsiveSidebar>
+    </ProtectedRoute>
+  );
 }

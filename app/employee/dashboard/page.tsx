@@ -1,11 +1,19 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useQuery, useMutation } from "convex/react"
-import { api } from "@/convex/_generated/api"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { useState, useEffect } from "react";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
+import { useAuth } from "@/lib/auth-context";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -13,78 +21,85 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 export default function EmployeeDashboard() {
-  const [employeeId, setEmployeeId] = useState<string | null>(null)
-  const [elapsedTime, setElapsedTime] = useState(0)
-  const [statusDialogOpen, setStatusDialogOpen] = useState(false)
-  const [statusReason, setStatusReason] = useState("")
-  const [selectedStatus, setSelectedStatus] = useState<"break" | "task">("break")
+  const { user, employee } = useAuth();
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [statusReason, setStatusReason] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState<"break" | "task">(
+    "break"
+  );
 
-  const todayHours = useQuery(api.workingHours.getTodayWorkingHours, { employeeId: employeeId as any })
-  const startWorkDay = useMutation(api.workingHours.startWorkDay)
-  const endWorkDay = useMutation(api.workingHours.endWorkDay)
-  const updateStatus = useMutation(api.employees.updateEmployeeStatus)
+  const todayHours = useQuery(api.workingHours.getTodayWorkingHours, {
+    employeeId: employee?._id,
+  });
+  const startWorkDay = useMutation(api.workingHours.startWorkDay);
+  const endWorkDay = useMutation(api.workingHours.endWorkDay);
+  const updateStatus = useMutation(api.employees.updateEmployeeStatus);
 
   // Simulate elapsed time
   useEffect(() => {
     const interval = setInterval(() => {
       if (todayHours?.startTime && !todayHours?.endTime) {
-        setElapsedTime((Date.now() - todayHours.startTime) / 1000)
+        setElapsedTime((Date.now() - todayHours.startTime) / 1000);
       }
-    }, 1000)
+    }, 1000);
 
-    return () => clearInterval(interval)
-  }, [todayHours])
+    return () => clearInterval(interval);
+  }, [todayHours]);
 
   const handleStartWork = async () => {
+    if (!employee) return;
     try {
-      // TODO: Get actual employee ID from auth context
-      // await startWorkDay({ employeeId })
+      await startWorkDay({ employeeId: employee._id });
     } catch (error) {
-      console.error("Failed to start work day:", error)
+      console.error("Failed to start work day:", error);
     }
-  }
+  };
 
   const handleEndWork = async () => {
+    if (!employee) return;
     try {
-      // TODO: Get actual employee ID from auth context
-      // await endWorkDay({ employeeId })
+      await endWorkDay({ employeeId: employee._id });
     } catch (error) {
-      console.error("Failed to end work day:", error)
+      console.error("Failed to end work day:", error);
     }
-  }
+  };
 
   const handleStatusChange = async () => {
+    if (!employee || !user) return;
     try {
-      // TODO: Get actual employee ID and user ID from auth context
-      // await updateStatus({
-      //   employeeId,
-      //   status: selectedStatus,
-      //   reason: statusReason,
-      //   userId: currentUserId
-      // })
-      setStatusDialogOpen(false)
-      setStatusReason("")
+      await updateStatus({
+        employeeId: employee._id,
+        status: selectedStatus,
+        reason: statusReason,
+        userId: user._id,
+      });
+      setStatusDialogOpen(false);
+      setStatusReason("");
     } catch (error) {
-      console.error("Failed to update status:", error)
+      console.error("Failed to update status:", error);
     }
-  }
+  };
 
   const formatTime = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600)
-    const minutes = Math.floor((seconds % 3600) / 60)
-    return `${hours}h ${minutes}m`
-  }
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    return `${hours}h ${minutes}m`;
+  };
 
   return (
     <div className="p-8 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Employee Dashboard</h1>
-        <p className="text-muted-foreground">Track your working hours and status</p>
+        <h1 className="text-3xl font-bold text-foreground">
+          Employee Dashboard
+        </h1>
+        <p className="text-muted-foreground">
+          Track your working hours and status
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -97,12 +112,16 @@ export default function EmployeeDashboard() {
           <CardContent className="space-y-4">
             <div className="text-center space-y-2">
               <p className="text-sm text-muted-foreground">Elapsed Time</p>
-              <p className="text-4xl font-bold text-primary">{formatTime(elapsedTime)}</p>
+              <p className="text-4xl font-bold text-primary">
+                {formatTime(elapsedTime)}
+              </p>
             </div>
             <div className="flex gap-3">
               <Button
                 onClick={handleStartWork}
-                disabled={todayHours?.startTime !== undefined && !todayHours?.endTime}
+                disabled={
+                  todayHours?.startTime !== undefined && !todayHours?.endTime
+                }
                 className="flex-1"
               >
                 Start Work
@@ -110,7 +129,9 @@ export default function EmployeeDashboard() {
               <Button
                 onClick={handleEndWork}
                 variant="outline"
-                disabled={!todayHours?.startTime || todayHours?.endTime !== undefined}
+                disabled={
+                  !todayHours?.startTime || todayHours?.endTime !== undefined
+                }
                 className="flex-1 bg-transparent"
               >
                 End Work
@@ -118,10 +139,18 @@ export default function EmployeeDashboard() {
             </div>
             {todayHours && (
               <div className="text-sm text-muted-foreground space-y-1">
-                <p>Start: {new Date(todayHours.startTime).toLocaleTimeString()}</p>
-                {todayHours.endTime && <p>End: {new Date(todayHours.endTime).toLocaleTimeString()}</p>}
+                <p>
+                  Start: {new Date(todayHours.startTime).toLocaleTimeString()}
+                </p>
+                {todayHours.endTime && (
+                  <p>
+                    End: {new Date(todayHours.endTime).toLocaleTimeString()}
+                  </p>
+                )}
                 {todayHours.totalHours && (
-                  <p className="font-semibold text-foreground">Total: {todayHours.totalHours.toFixed(2)}h</p>
+                  <p className="font-semibold text-foreground">
+                    Total: {todayHours.totalHours.toFixed(2)}h
+                  </p>
                 )}
               </div>
             )}
@@ -148,20 +177,26 @@ export default function EmployeeDashboard() {
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Update Your Status</DialogTitle>
-                  <DialogDescription>Let your team know your current availability</DialogDescription>
+                  <DialogDescription>
+                    Let your team know your current availability
+                  </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label>Status Type</Label>
                     <div className="flex gap-2">
                       <Button
-                        variant={selectedStatus === "break" ? "default" : "outline"}
+                        variant={
+                          selectedStatus === "break" ? "default" : "outline"
+                        }
                         onClick={() => setSelectedStatus("break")}
                       >
                         On Break
                       </Button>
                       <Button
-                        variant={selectedStatus === "task" ? "default" : "outline"}
+                        variant={
+                          selectedStatus === "task" ? "default" : "outline"
+                        }
                         onClick={() => setSelectedStatus("task")}
                       >
                         On Task
@@ -215,5 +250,5 @@ export default function EmployeeDashboard() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

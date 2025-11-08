@@ -1,5 +1,5 @@
-import { defineSchema, defineTable } from "convex/server"
-import { v } from "convex/values"
+import { defineSchema, defineTable } from "convex/server";
+import { v } from "convex/values";
 
 export default defineSchema({
   users: defineTable({
@@ -22,7 +22,12 @@ export default defineSchema({
     position: v.string(),
     joinDate: v.number(),
     status: v.union(v.literal("active"), v.literal("inactive")),
-    currentStatus: v.union(v.literal("working"), v.literal("break"), v.literal("task"), v.literal("offline")),
+    currentStatus: v.union(
+      v.literal("working"),
+      v.literal("break"),
+      v.literal("task"),
+      v.literal("offline")
+    ),
     statusReason: v.optional(v.string()),
     expectedReturnTime: v.optional(v.number()),
     createdAt: v.number(),
@@ -42,15 +47,25 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index("by_employeeId", ["employeeId"])
-    .index("by_date", ["date"]),
+    .index("by_date", ["date"])
+    .index("by_date_and_employee", ["date", "employeeId"]),
 
   leaves: defineTable({
     employeeId: v.id("employees"),
     startDate: v.number(),
     endDate: v.number(),
-    type: v.union(v.literal("sick"), v.literal("casual"), v.literal("personal"), v.literal("other")),
+    type: v.union(
+      v.literal("sick"),
+      v.literal("casual"),
+      v.literal("personal"),
+      v.literal("other")
+    ),
     reason: v.string(),
-    status: v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected")),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("approved"),
+      v.literal("rejected")
+    ),
     approvedBy: v.optional(v.id("users")),
     comments: v.optional(v.string()),
     createdAt: v.number(),
@@ -61,7 +76,12 @@ export default defineSchema({
 
   statusHistory: defineTable({
     employeeId: v.id("employees"),
-    status: v.union(v.literal("working"), v.literal("break"), v.literal("task"), v.literal("offline")),
+    status: v.union(
+      v.literal("working"),
+      v.literal("break"),
+      v.literal("task"),
+      v.literal("offline")
+    ),
     reason: v.optional(v.string()),
     expectedReturnTime: v.optional(v.number()),
     duration: v.optional(v.number()),
@@ -88,9 +108,13 @@ export default defineSchema({
     employeeId: v.id("employees"),
     title: v.string(),
     description: v.string(),
-    status: v.union(v.literal("pending"), v.literal("in_progress"), v.literal("completed")),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("in_progress"),
+      v.literal("completed")
+    ),
     dueDate: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
   }).index("by_employeeId", ["employeeId"]),
-})
+});

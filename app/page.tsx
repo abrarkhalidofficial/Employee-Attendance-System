@@ -1,63 +1,88 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function AuthPage() {
-  const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [name, setName] = useState("")
-  const [role, setRole] = useState<"admin" | "employee">("employee")
-  const [error, setError] = useState("")
+  const router = useRouter();
+  const { signIn, signUp } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [role, setRole] = useState<"admin" | "employee">("employee");
+  const [error, setError] = useState("");
 
   const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError("")
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
 
     try {
-      // TODO: Call Convex signUp mutation
-      // const userId = await signUp({ email, name, password, role })
-      router.push(role === "admin" ? "/admin/dashboard" : "/employee/dashboard")
+      await signUp(email, name, password, role);
+      router.push(
+        role === "admin" ? "/admin/dashboard" : "/employee/dashboard"
+      );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Sign up failed")
+      setError(err instanceof Error ? err.message : "Sign up failed");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError("")
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
 
     try {
-      // TODO: Call Convex signIn query
-      // const user = await signIn({ email, password })
-      router.push("/admin/dashboard")
+      await signIn(email, password);
+      // Determine role after sign in
+      const storedUser = localStorage.getItem("currentUser");
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        router.push(
+          user.role === "admin" ? "/admin/dashboard" : "/employee/dashboard"
+        );
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Sign in failed")
+      setError(err instanceof Error ? err.message : "Sign in failed");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="space-y-2 text-center">
-          <CardTitle className="text-3xl font-bold">Attendance System</CardTitle>
-          <CardDescription>Manage attendance, leaves, and productivity</CardDescription>
+          <CardTitle className="text-3xl font-bold">
+            Attendance System
+          </CardTitle>
+          <CardDescription>
+            Manage attendance, leaves, and productivity
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">
@@ -139,7 +164,10 @@ export default function AuthPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-role">Account Type</Label>
-                  <Select value={role} onValueChange={(value: any) => setRole(value)}>
+                  <Select
+                    value={role}
+                    onValueChange={(value: any) => setRole(value)}
+                  >
                     <SelectTrigger id="signup-role">
                       <SelectValue />
                     </SelectTrigger>
@@ -159,5 +187,5 @@ export default function AuthPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

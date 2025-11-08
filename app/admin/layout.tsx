@@ -1,5 +1,8 @@
-import type { ReactNode } from "react"
-import { ResponsiveSidebar } from "@/components/responsive-sidebar"
+"use client";
+
+import type { ReactNode } from "react";
+import { ResponsiveSidebar } from "@/components/responsive-sidebar";
+import { ProtectedRoute } from "@/components/protected-route";
 
 const adminNav = (
   <nav className="p-6 space-y-4">
@@ -39,8 +42,12 @@ const adminNav = (
       </li>
     </ul>
   </nav>
-)
+);
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
-  return <ResponsiveSidebar nav={adminNav}>{children}</ResponsiveSidebar>
+  return (
+    <ProtectedRoute requiredRole="admin">
+      <ResponsiveSidebar nav={adminNav}>{children}</ResponsiveSidebar>
+    </ProtectedRoute>
+  );
 }

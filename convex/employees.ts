@@ -1,5 +1,5 @@
-import { mutation, query } from "./_generated/server"
-import { v } from "convex/values"
+import { mutation, query } from "./_generated/server";
+import { v } from "convex/values";
 
 export const createEmployee = mutation({
   args: {
@@ -10,7 +10,7 @@ export const createEmployee = mutation({
     position: v.string(),
   },
   handler: async (ctx, args) => {
-    const { userId, name, email, department, position } = args
+    const { userId, name, email, department, position } = args;
 
     const employeeId = await ctx.db.insert("employees", {
       userId,
@@ -23,7 +23,7 @@ export const createEmployee = mutation({
       currentStatus: "offline",
       createdAt: Date.now(),
       updatedAt: Date.now(),
-    })
+    });
 
     // Log activity
     await ctx.db.insert("activityLog", {
@@ -35,40 +35,57 @@ export const createEmployee = mutation({
         after: { name, email, department, position },
       },
       timestamp: Date.now(),
-    })
+    });
 
-    return employeeId
+    return employeeId;
   },
-})
+});
 
 export const getAllEmployees = query({
   handler: async (ctx) => {
-    return await ctx.db.query("employees").collect()
+    return await ctx.db.query("employees").collect();
   },
-})
+});
 
 export const getEmployeeById = query({
   args: {
     employeeId: v.id("employees"),
   },
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.employeeId)
+    return await ctx.db.get(args.employeeId);
   },
-})
+});
+
+export const getEmployeeByUserId = query({
+  args: {
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("employees")
+      .withIndex("by_userId", (q) => q.eq("userId", args.userId))
+      .first();
+  },
+});
 
 export const updateEmployeeStatus = mutation({
   args: {
     employeeId: v.id("employees"),
-    status: v.union(v.literal("working"), v.literal("break"), v.literal("task"), v.literal("offline")),
+    status: v.union(
+      v.literal("working"),
+      v.literal("break"),
+      v.literal("task"),
+      v.literal("offline")
+    ),
     reason: v.optional(v.string()),
     expectedReturnTime: v.optional(v.number()),
     userId: v.id("users"),
   },
   handler: async (ctx, args) => {
-    const { employeeId, status, reason, expectedReturnTime, userId } = args
+    const { employeeId, status, reason, expectedReturnTime, userId } = args;
 
-    const employee = await ctx.db.get(employeeId)
-    if (!employee) throw new Error("Employee not found")
+    const employee = await ctx.db.get(employeeId);
+    if (!employee) throw new Error("Employee not found");
 
     // Update employee status
     await ctx.db.patch(employeeId, {
@@ -76,7 +93,7 @@ export const updateEmployeeStatus = mutation({
       statusReason: reason,
       expectedReturnTime: expectedReturnTime,
       updatedAt: Date.now(),
-    })
+    });
 
     // Log status history
     await ctx.db.insert("statusHistory", {
@@ -85,7 +102,7 @@ export const updateEmployeeStatus = mutation({
       reason,
       expectedReturnTime,
       createdAt: Date.now(),
-    })
+    });
 
     // Log activity
     await ctx.db.insert("activityLog", {
@@ -98,11 +115,11 @@ export const updateEmployeeStatus = mutation({
         after: { currentStatus: status, reason },
       },
       timestamp: Date.now(),
-    })
+    });
 
-    return employeeId
+    return employeeId;
   },
-})
+});
 
 export const deactivateEmployee = mutation({
   args: {
@@ -110,15 +127,15 @@ export const deactivateEmployee = mutation({
     userId: v.id("users"),
   },
   handler: async (ctx, args) => {
-    const { employeeId, userId } = args
+    const { employeeId, userId } = args;
 
-    const employee = await ctx.db.get(employeeId)
-    if (!employee) throw new Error("Employee not found")
+    const employee = await ctx.db.get(employeeId);
+    if (!employee) throw new Error("Employee not found");
 
     await ctx.db.patch(employeeId, {
       status: "inactive",
       updatedAt: Date.now(),
-    })
+    });
 
     await ctx.db.insert("activityLog", {
       userId,
@@ -130,8 +147,8 @@ export const deactivateEmployee = mutation({
         after: { status: "inactive" },
       },
       timestamp: Date.now(),
-    })
+    });
 
-    return employeeId
+    return employeeId;
   },
-})
+});

@@ -10,6 +10,7 @@
 
 import type * as activityLog from "../activityLog.js";
 import type * as auth from "../auth.js";
+import type * as authSimple from "../authSimple.js";
 import type * as employees from "../employees.js";
 import type * as http from "../http.js";
 import type * as leaves from "../leaves.js";
@@ -34,6 +35,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   activityLog: typeof activityLog;
   auth: typeof auth;
+  authSimple: typeof authSimple;
   employees: typeof employees;
   http: typeof http;
   leaves: typeof leaves;

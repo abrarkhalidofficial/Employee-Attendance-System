@@ -1,14 +1,21 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { useQuery, useMutation } from "convex/react"
-import { api } from "@/convex/_generated/api"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { useState } from "react";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { useAuth } from "@/lib/auth-context";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -16,42 +23,53 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 
 export default function EmployeesPage() {
-  const employees = useQuery(api.employees.getAllEmployees)
-  const createEmployee = useMutation(api.employees.createEmployee)
-  const [isOpen, setIsOpen] = useState(false)
+  const { user } = useAuth();
+  const employees = useQuery(api.employees.getAllEmployees);
+  const createEmployee = useMutation(api.employees.createEmployee);
+  const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     department: "",
     position: "",
-  })
+  });
 
   const handleCreateEmployee = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
+    if (!user) return;
+
     try {
-      // TODO: Get current user ID
-      // await createEmployee({
-      //   userId: currentUserId,
-      //   ...formData,
-      // })
-      setFormData({ name: "", email: "", department: "", position: "" })
-      setIsOpen(false)
+      await createEmployee({
+        userId: user._id,
+        ...formData,
+      });
+      setFormData({ name: "", email: "", department: "", position: "" });
+      setIsOpen(false);
     } catch (error) {
-      console.error("Failed to create employee:", error)
+      console.error("Failed to create employee:", error);
     }
-  }
+  };
 
   return (
     <div className="p-8 space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Employees</h1>
-          <p className="text-muted-foreground">Manage employee profiles and information</p>
+          <p className="text-muted-foreground">
+            Manage employee profiles and information
+          </p>
         </div>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
@@ -60,7 +78,9 @@ export default function EmployeesPage() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Create New Employee</DialogTitle>
-              <DialogDescription>Add a new employee to the system</DialogDescription>
+              <DialogDescription>
+                Add a new employee to the system
+              </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleCreateEmployee} className="space-y-4">
               <div className="space-y-2">
@@ -68,7 +88,9 @@ export default function EmployeesPage() {
                 <Input
                   id="name"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
                   placeholder="John Doe"
                   required
                 />
@@ -79,7 +101,9 @@ export default function EmployeesPage() {
                   id="email"
                   type="email"
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
                   placeholder="john@example.com"
                   required
                 />
@@ -89,7 +113,9 @@ export default function EmployeesPage() {
                 <Input
                   id="department"
                   value={formData.department}
-                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, department: e.target.value })
+                  }
                   placeholder="Engineering"
                   required
                 />
@@ -99,7 +125,9 @@ export default function EmployeesPage() {
                 <Input
                   id="position"
                   value={formData.position}
-                  onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, position: e.target.value })
+                  }
                   placeholder="Software Engineer"
                   required
                 />
@@ -143,17 +171,27 @@ export default function EmployeesPage() {
                 <TableBody>
                   {employees.map((employee) => (
                     <TableRow key={employee._id}>
-                      <TableCell className="font-medium">{employee.name}</TableCell>
+                      <TableCell className="font-medium">
+                        {employee.name}
+                      </TableCell>
                       <TableCell>{employee.email}</TableCell>
                       <TableCell>{employee.department}</TableCell>
                       <TableCell>{employee.position}</TableCell>
                       <TableCell>
-                        <Badge variant={employee.status === "active" ? "default" : "secondary"}>
+                        <Badge
+                          variant={
+                            employee.status === "active"
+                              ? "default"
+                              : "secondary"
+                          }
+                        >
                           {employee.status}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline">{employee.currentStatus}</Badge>
+                        <Badge variant="outline">
+                          {employee.currentStatus}
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         <Button variant="ghost" size="sm">
@@ -169,5 +207,5 @@ export default function EmployeesPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
