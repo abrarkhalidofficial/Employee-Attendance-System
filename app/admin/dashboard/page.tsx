@@ -11,22 +11,13 @@ import { LeaveRequestsCard } from "@/components/admin/leave-requests-card";
 import { AttendanceOverview } from "@/components/admin/attendance-overview";
 import { CreateEmployeeDialog } from "@/components/admin/create-employee-dialog";
 import { WorkOverview } from "@/components/admin/work-overview";
-import {
-  LogOut,
-  Users,
-  Calendar,
-  Clock,
-  BarChart3,
-  Settings,
-  Plus,
-  TrendingUp,
-} from "lucide-react";
+import { Users, Calendar, Clock, Plus } from "lucide-react";
 import { useSession } from "@/components/providers/session-provider";
 import type { LeaveRequestId } from "@/lib/types";
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const { user, hydrated, clearUser } = useSession();
+  const { user, hydrated } = useSession();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const createEmployee = useMutation(api.users.createEmployee);
   const updateLeaveStatus = useMutation(api.leaveRequests.updateStatus);
@@ -84,11 +75,6 @@ export default function AdminDashboard() {
     await updateLeaveStatus({ id, status: "rejected" });
   };
 
-  const handleSignOut = () => {
-    clearUser();
-    router.push("/");
-  };
-
   if (!hydrated || !user || user.role !== "admin") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -100,54 +86,19 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b shadow-sm sticky top-0 z-10 backdrop-blur-sm bg-card/95">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">TimeTrack</h1>
-            <p className="text-sm text-muted-foreground">Admin Dashboard</p>
-          </div>
-          <div className="flex gap-2">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">
+                📊 Admin Dashboard
+              </h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                Employee management and system overview
+              </p>
+            </div>
             <Button onClick={() => setIsCreateDialogOpen(true)}>
               <Plus className="w-4 h-4 mr-2" />
               Create Employee
-            </Button>
-            <Button
-              onClick={() => router.push("/admin/analytics")}
-              variant="outline"
-            >
-              <BarChart3 className="w-4 h-4 mr-2" />
-              Analytics
-            </Button>
-            <Button
-              onClick={() => router.push("/admin/attendance")}
-              variant="outline"
-            >
-              <Calendar className="w-4 h-4 mr-2" />
-              Attendance
-            </Button>
-            <Button
-              onClick={() => router.push("/admin/regularization")}
-              variant="outline"
-            >
-              <Clock className="w-4 h-4 mr-2" />
-              Regularization
-            </Button>
-            <Button
-              onClick={() => router.push("/admin/work-analytics")}
-              variant="outline"
-            >
-              <TrendingUp className="w-4 h-4 mr-2" />
-              Work Logs
-            </Button>
-            <Button
-              onClick={() => router.push("/admin/settings")}
-              variant="outline"
-            >
-              <Settings className="w-4 h-4 mr-2" />
-              Settings
-            </Button>
-            <Button onClick={handleSignOut} variant="outline">
-              <LogOut className="w-4 h-4 mr-2" />
-              Sign out
             </Button>
           </div>
         </div>

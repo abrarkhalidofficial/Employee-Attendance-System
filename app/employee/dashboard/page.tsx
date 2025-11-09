@@ -11,15 +11,13 @@ import { BreakTimer } from "@/components/employee/break-timer";
 import { TimeLogCard } from "@/components/employee/time-log-card";
 import { WorkLogForm } from "@/components/employee/work-log-form";
 import { WorkLogList } from "@/components/employee/work-log-list";
-import { LogOut, Menu } from "lucide-react";
 import { useSession } from "@/components/providers/session-provider";
 import type { WorkLogDoc } from "@/lib/types";
 import type { Id } from "@/convex/_generated/dataModel";
 
 export default function EmployeeDashboard() {
   const router = useRouter();
-  const { user, hydrated, clearUser } = useSession();
-  const [menuOpen, setMenuOpen] = useState(false);
+  const { user, hydrated } = useSession();
   const createWorkLog = useMutation(api.workLogs.create);
   const deleteWorkLog = useMutation(api.workLogs.remove);
 
@@ -85,35 +83,16 @@ export default function EmployeeDashboard() {
     );
   }
 
-  const handleSignOut = () => {
-    clearUser();
-    router.push("/");
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b shadow-sm sticky top-0 z-10 backdrop-blur-sm bg-card/95">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">TimeTrack</h1>
-            <p className="text-sm text-muted-foreground">Employee Dashboard</p>
-          </div>
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="md:hidden p-2 hover:bg-muted rounded-lg"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-          <div className="hidden md:flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-sm font-medium text-foreground">{user.name}</p>
-              <p className="text-xs text-muted-foreground">{user.department}</p>
-            </div>
-            <Button onClick={handleSignOut} variant="outline">
-              <LogOut className="w-4 h-4 mr-2" />
-              Sign out
-            </Button>
-          </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <h1 className="text-3xl font-bold text-foreground">
+            🏠 Employee Dashboard
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Welcome back, {user.name}
+          </p>
         </div>
       </header>
 
