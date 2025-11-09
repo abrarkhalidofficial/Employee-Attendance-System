@@ -137,9 +137,12 @@ export default function EmployeeDashboard() {
               </div>
               {todayHours && (
                 <div className="text-sm text-muted-foreground space-y-1">
-                  <p>
-                    Start: {new Date(todayHours.startTime).toLocaleTimeString()}
-                  </p>
+                  {todayHours.startTime && (
+                    <p>
+                      Start:{" "}
+                      {new Date(todayHours.startTime).toLocaleTimeString()}
+                    </p>
+                  )}
                   {todayHours.endTime && (
                     <p>
                       End: {new Date(todayHours.endTime).toLocaleTimeString()}

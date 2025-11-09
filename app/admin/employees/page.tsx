@@ -36,8 +36,9 @@ import { Badge } from "@/components/ui/badge";
 
 export default function EmployeesPage() {
   const { user } = useAuth();
-  const employees = useQuery(api.employees.getAllEmployees);
-  const createEmployee = useMutation(api.employees.createEmployee);
+  const employeesData = useQuery(api.employees.list, {});
+  const employees = employeesData?.items || [];
+  const createEmployee = useMutation(api.employees.create);
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -51,9 +52,14 @@ export default function EmployeesPage() {
     if (!user) return;
 
     try {
+      // Create employee using the correct API structure
       await createEmployee({
-        userId: user._id,
-        ...formData,
+        email: formData.email,
+        employeeCode: `EMP${Date.now()}`, // Generate a simple employee code
+        firstName: formData.name.split(" ")[0] || formData.name,
+        lastName: formData.name.split(" ")[1] || "",
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        hireDate: new Date().toISOString().split("T")[0],
       });
       setFormData({ name: "", email: "", department: "", position: "" });
       setIsOpen(false);
@@ -146,7 +152,7 @@ export default function EmployeesPage() {
           <CardDescription>All employees in the system</CardDescription>
         </CardHeader>
         <CardContent>
-          {employees === undefined ? (
+          {!employeesData ? (
             <div className="flex justify-center p-8">
               <p className="text-muted-foreground">Loading...</p>
             </div>
@@ -161,36 +167,26 @@ export default function EmployeesPage() {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
-                    <TableHead>Department</TableHead>
-                    <TableHead>Position</TableHead>
+                    <TableHead>Employee Code</TableHead>
+                    <TableHead>Hire Date</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Current Status</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {employees.map((employee) => (
+                  {employees.map((employee: any) => (
                     <TableRow key={employee._id}>
                       <TableCell className="font-medium">
-                        {employee.name}
+                        {employee.firstName} {employee.lastName}
                       </TableCell>
                       <TableCell>{employee.email}</TableCell>
-                      <TableCell>{employee.department}</TableCell>
-                      <TableCell>{employee.position}</TableCell>
+                      <TableCell>{employee.employeeCode}</TableCell>
+                      <TableCell>{employee.hireDate}</TableCell>
                       <TableCell>
                         <Badge
-                          variant={
-                            employee.status === "active"
-                              ? "default"
-                              : "secondary"
-                          }
+                          variant={employee.isActive ? "default" : "secondary"}
                         >
-                          {employee.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">
-                          {employee.currentStatus}
+                          {employee.isActive ? "Active" : "Inactive"}
                         </Badge>
                       </TableCell>
                       <TableCell>

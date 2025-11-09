@@ -1,11 +1,24 @@
-"use client"
+"use client";
 
-import { useQuery, useMutation } from "convex/react"
-import { api } from "@/convex/_generated/api"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
+import { useQuery, useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,57 +28,65 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { useState } from "react"
+} from "@/components/ui/alert-dialog";
+import { useState } from "react";
 
 export default function LeavesPage() {
-  const leaves = useQuery(api.leaves.getAllLeaves)
-  const approveLeave = useMutation(api.leaves.approveLeave)
-  const rejectLeave = useMutation(api.leaves.rejectLeave)
-  const [selectedLeave, setSelectedLeave] = useState<string | null>(null)
+  const leaves = useQuery(api.leaves.list, {});
+  const approveLeave = useMutation(api.leaves.approve);
+  const rejectLeave = useMutation(api.leaves.reject);
+  const [selectedLeave, setSelectedLeave] = useState<string | null>(null);
 
   const handleApprove = async (leaveId: string) => {
     try {
       // TODO: Get current user ID
       // await approveLeave({ leaveId, userId: currentUserId })
-      setSelectedLeave(null)
+      setSelectedLeave(null);
     } catch (error) {
-      console.error("Failed to approve leave:", error)
+      console.error("Failed to approve leave:", error);
     }
-  }
+  };
 
   const handleReject = async (leaveId: string) => {
     try {
       // TODO: Get current user ID
       // await rejectLeave({ leaveId, comments: 'Rejected', userId: currentUserId })
-      setSelectedLeave(null)
+      setSelectedLeave(null);
     } catch (error) {
-      console.error("Failed to reject leave:", error)
+      console.error("Failed to reject leave:", error);
     }
-  }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "approved":
-        return "bg-green-100 text-green-800"
-      case "rejected":
-        return "bg-red-100 text-red-800"
+      case "APPROVED":
+        return "bg-green-100 text-green-800";
+      case "REJECTED":
+        return "bg-red-100 text-red-800";
+      case "PENDING":
+        return "bg-yellow-100 text-yellow-800";
+      case "CANCELLED":
+        return "bg-gray-100 text-gray-800";
       default:
-        return "bg-yellow-100 text-yellow-800"
+        return "bg-yellow-100 text-yellow-800";
     }
-  }
+  };
 
   return (
     <div className="p-8 space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-foreground">Leave Requests</h1>
-        <p className="text-muted-foreground">Manage employee leave requests and approvals</p>
+        <p className="text-muted-foreground">
+          Manage employee leave requests and approvals
+        </p>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>All Leave Requests</CardTitle>
-          <CardDescription>Approve or reject employee leave requests</CardDescription>
+          <CardDescription>
+            Approve or reject employee leave requests
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {leaves === undefined ? (
@@ -87,43 +108,66 @@ export default function LeavesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {leaves.map((leave) => (
+                  {leaves.map((leave: any) => (
                     <TableRow key={leave._id}>
-                      <TableCell className="font-medium">Employee {leave.employeeId}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{leave.type}</Badge>
-                      </TableCell>
-                      <TableCell>{new Date(leave.startDate).toLocaleDateString()}</TableCell>
-                      <TableCell>{new Date(leave.endDate).toLocaleDateString()}</TableCell>
-                      <TableCell className="max-w-xs truncate">{leave.reason}</TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColor(leave.status)}>{leave.status}</Badge>
+                      <TableCell className="font-medium">
+                        {leave.employeeName}
                       </TableCell>
                       <TableCell>
-                        {leave.status === "pending" && (
+                        <Badge variant="outline">{leave.leaveTypeName}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        {new Date(leave.startDate).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        {new Date(leave.endDate).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell className="max-w-xs truncate">
+                        {leave.reason || "-"}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={getStatusColor(leave.status)}>
+                          {leave.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {leave.status === "PENDING" && (
                           <div className="flex gap-2">
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button size="sm" variant="outline" onClick={() => setSelectedLeave(leave._id)}>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setSelectedLeave(leave._id)}
+                                >
                                   Approve
                                 </Button>
                               </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle>Approve Leave Request</AlertDialogTitle>
+                                  <AlertDialogTitle>
+                                    Approve Leave Request
+                                  </AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    Are you sure you want to approve this leave request?
+                                    Are you sure you want to approve this leave
+                                    request?
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <div className="flex gap-4">
                                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleApprove(leave._id)}>
+                                  <AlertDialogAction
+                                    onClick={() => handleApprove(leave._id)}
+                                  >
                                     Approve
                                   </AlertDialogAction>
                                 </div>
                               </AlertDialogContent>
                             </AlertDialog>
-                            <Button size="sm" variant="destructive" onClick={() => handleReject(leave._id)}>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleReject(leave._id)}
+                            >
                               Reject
                             </Button>
                           </div>
@@ -138,5 +182,5 @@ export default function LeavesPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

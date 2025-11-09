@@ -12,6 +12,48 @@ export const types = query({
   },
 });
 
+// Get all leave requests (for admin)
+export const list = query({
+  args: {
+    status: v.optional(
+      v.union(
+        v.literal("PENDING"),
+        v.literal("APPROVED"),
+        v.literal("REJECTED"),
+        v.literal("CANCELLED")
+      )
+    ),
+  },
+  handler: async (ctx, args) => {
+    // Temporarily removed auth requirement
+    let leaves;
+
+    if (args.status) {
+      leaves = await ctx.db
+        .query("leaveRequests")
+        .withIndex("by_status", (q) => q.eq("status", args.status!))
+        .collect();
+    } else {
+      leaves = await ctx.db.query("leaveRequests").collect();
+    }
+
+    // Enrich with employee and leave type info
+    return await Promise.all(
+      leaves.map(async (leave) => {
+        const employee = await ctx.db.get(leave.employeeId);
+        const leaveType = await ctx.db.get(leave.leaveTypeId);
+        return {
+          ...leave,
+          employeeName: employee
+            ? `${employee.firstName} ${employee.lastName}`
+            : "Unknown",
+          leaveTypeName: leaveType?.name || "Unknown",
+        };
+      })
+    );
+  },
+});
+
 export const mine = query({
   handler: async (ctx) => {
     const viewer = await requireViewer(ctx);

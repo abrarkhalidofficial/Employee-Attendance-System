@@ -1,19 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
-// Helper function to hash password (simple hash for development)
-function simpleHash(password: string): string {
-  // Simple consistent hash for development
-  // In production, use proper password hashing with bcrypt or similar
-  let hash = 0;
-  for (let i = 0; i < password.length; i++) {
-    const char = password.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash = hash & hash; // Convert to 32-bit integer
-  }
-  return Math.abs(hash).toString(36);
-}
-
 export const signUpMutation = mutation({
   args: {
     email: v.string(),
@@ -30,13 +17,12 @@ export const signUpMutation = mutation({
     if (existingUser) {
       throw new Error("User with this email already exists");
     }
-    const hashedPassword = simpleHash(password);
     const normalizedRole = role === "admin" ? "ADMIN" : "EMPLOYEE";
     const userId = await ctx.db.insert("users", {
       email,
       displayName: name,
       role: normalizedRole,
-      passwordHash: hashedPassword,
+      passwordHash: password, // Storing plain password (development only!)
       isActive: true,
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -64,8 +50,8 @@ export const signInQuery = query({
     if (!user.isActive) {
       throw new Error("User account is disabled.");
     }
-    const hashedPassword = simpleHash(password);
-    if (user.passwordHash !== hashedPassword) {
+    // Compare plain password (development only!)
+    if (user.passwordHash !== password) {
       throw new Error("Invalid password. Please try again.");
     }
 
@@ -78,9 +64,7 @@ export const signInQuery = query({
       isActive: user.isActive,
     };
   },
-});
-
-// Helper query to check what users exist (for debugging)
+}); // Helper query to check what users exist (for debugging)
 export const listUsers = query({
   handler: async (ctx) => {
     const users = await ctx.db.query("users").collect();

@@ -1,8 +1,14 @@
-"use client"
+"use client";
 
-import { useQuery } from "convex/react"
-import { api } from "@/convex/_generated/api"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   LineChart,
   Line,
@@ -14,11 +20,14 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-} from "recharts"
+} from "recharts";
 
 export default function AnalyticsPage() {
-  // TODO: Get employee ID from auth context
-  const workingHours = useQuery(api.workingHours.getWorkingHoursByEmployee, { employeeId: null as any })
+  // Removed unused query - using sample data instead
+  // const { employee } = useAuth()
+  // const workingHours = employee
+  //   ? useQuery(api.workingHours.getWeeklySummary, { employeeId: employee._id })
+  //   : null
 
   // Sample data for charts
   const weeklyData = [
@@ -27,34 +36,38 @@ export default function AnalyticsPage() {
     { day: "Wed", hours: 8.0, breaks: 0.5 },
     { day: "Thu", hours: 8.3, breaks: 0.7 },
     { day: "Fri", hours: 7.5, breaks: 1.0 },
-  ]
+  ];
 
   const monthlyData = [
     { week: "Week 1", hours: 40 },
     { week: "Week 2", hours: 40 },
     { week: "Week 3", hours: 39.5 },
     { week: "Week 4", hours: 38.5 },
-  ]
+  ];
 
   const stats = {
     averageDaily: 8.1,
     totalThisMonth: 158,
     leavesTaken: 3,
     upcomingLeaves: 1,
-  }
+  };
 
   return (
     <div className="p-8 space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-foreground">Work Analytics</h1>
-        <p className="text-muted-foreground">View your productivity and working patterns</p>
+        <p className="text-muted-foreground">
+          View your productivity and working patterns
+        </p>
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Avg Daily Hours</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Avg Daily Hours
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">{stats.averageDaily}h</p>
@@ -62,7 +75,9 @@ export default function AnalyticsPage() {
         </Card>
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">This Month</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              This Month
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">{stats.totalThisMonth}h</p>
@@ -70,7 +85,9 @@ export default function AnalyticsPage() {
         </Card>
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Leaves Taken</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Leaves Taken
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">{stats.leavesTaken}</p>
@@ -78,7 +95,9 @@ export default function AnalyticsPage() {
         </Card>
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Upcoming Leaves</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Upcoming Leaves
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">{stats.upcomingLeaves}</p>
@@ -100,8 +119,16 @@ export default function AnalyticsPage() {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Bar dataKey="hours" fill="var(--color-chart-1)" name="Working Hours" />
-              <Bar dataKey="breaks" fill="var(--color-chart-2)" name="Break Time" />
+              <Bar
+                dataKey="hours"
+                fill="var(--color-chart-1)"
+                name="Working Hours"
+              />
+              <Bar
+                dataKey="breaks"
+                fill="var(--color-chart-2)"
+                name="Break Time"
+              />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
@@ -121,11 +148,16 @@ export default function AnalyticsPage() {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Line type="monotone" dataKey="hours" stroke="var(--color-chart-2)" name="Weekly Hours" />
+              <Line
+                type="monotone"
+                dataKey="hours"
+                stroke="var(--color-chart-2)"
+                name="Weekly Hours"
+              />
             </LineChart>
           </ResponsiveContainer>
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
