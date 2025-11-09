@@ -1,6 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { ConvexError, v } from "convex/values";
-import { todayISO } from "./utils";
+import { todayISO, getCurrentPakistanTime } from "./utils";
 
 export const listRecent = query({
   args: { limit: v.optional(v.number()) },
@@ -124,10 +124,7 @@ export const create = mutation({
       date: todayISO(),
       taskDescription: args.taskDescription,
       timeSpent: args.timeSpent,
-      createdAt: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
+      createdAt: getCurrentPakistanTime(),
       insertedAt,
     });
   },

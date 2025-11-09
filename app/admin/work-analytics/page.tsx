@@ -125,17 +125,33 @@ export default function WorkAnalyticsPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* Header */}
       <header className="border-b border-slate-700 bg-slate-800/50 backdrop-blur sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center gap-4">
-          <button
-            onClick={() => router.back()}
-            className="p-2 hover:bg-slate-700 rounded-lg transition"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-50">Work Analytics</h1>
-            <p className="text-sm text-slate-400">
-              Employee performance & work logs
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => router.back()}
+              className="p-2 hover:bg-slate-700 rounded-lg transition"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-50">
+                📊 Work Analytics
+              </h1>
+              <p className="text-sm text-slate-400">
+                Employee performance & work logs
+              </p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-slate-400">
+              Pakistan Standard Time (PKT)
+            </p>
+            <p className="text-sm font-medium text-slate-300">
+              {new Date().toLocaleString("en-PK", {
+                timeZone: "Asia/Karachi",
+                dateStyle: "medium",
+                timeStyle: "short",
+              })}
             </p>
           </div>
         </div>
@@ -145,11 +161,15 @@ export default function WorkAnalyticsPage() {
       <main className="max-w-7xl mx-auto px-4 py-8 space-y-6">
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="border-slate-700 bg-slate-800 p-6">
-            <div className="flex items-center gap-3">
-              <Clock className="w-8 h-8 text-blue-400" />
+          <Card className="border-slate-700 bg-gradient-to-br from-blue-500/10 to-blue-600/5 p-6 hover:from-blue-500/15 hover:to-blue-600/10 transition-all">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-blue-500/20 rounded-xl">
+                <Clock className="w-7 h-7 text-blue-400" />
+              </div>
               <div>
-                <p className="text-xs text-slate-400">Total Time</p>
+                <p className="text-xs text-slate-400 font-medium">
+                  Total Time Worked
+                </p>
                 <p className="text-2xl font-bold text-slate-50">
                   {Math.floor(stats.totalTime / 60)}h {stats.totalTime % 60}m
                 </p>
@@ -157,11 +177,15 @@ export default function WorkAnalyticsPage() {
             </div>
           </Card>
 
-          <Card className="border-slate-700 bg-slate-800 p-6">
-            <div className="flex items-center gap-3">
-              <CheckCircle className="w-8 h-8 text-green-400" />
+          <Card className="border-slate-700 bg-gradient-to-br from-green-500/10 to-green-600/5 p-6 hover:from-green-500/15 hover:to-green-600/10 transition-all">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-green-500/20 rounded-xl">
+                <CheckCircle className="w-7 h-7 text-green-400" />
+              </div>
               <div>
-                <p className="text-xs text-slate-400">Total Tasks</p>
+                <p className="text-xs text-slate-400 font-medium">
+                  Total Tasks
+                </p>
                 <p className="text-2xl font-bold text-slate-50">
                   {stats.totalTasks}
                 </p>
@@ -169,11 +193,15 @@ export default function WorkAnalyticsPage() {
             </div>
           </Card>
 
-          <Card className="border-slate-700 bg-slate-800 p-6">
-            <div className="flex items-center gap-3">
-              <Users className="w-8 h-8 text-purple-400" />
+          <Card className="border-slate-700 bg-gradient-to-br from-purple-500/10 to-purple-600/5 p-6 hover:from-purple-500/15 hover:to-purple-600/10 transition-all">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-purple-500/20 rounded-xl">
+                <Users className="w-7 h-7 text-purple-400" />
+              </div>
               <div>
-                <p className="text-xs text-slate-400">Active Employees</p>
+                <p className="text-xs text-slate-400 font-medium">
+                  Active Employees
+                </p>
                 <p className="text-2xl font-bold text-slate-50">
                   {stats.uniqueEmployees}
                 </p>
@@ -181,11 +209,15 @@ export default function WorkAnalyticsPage() {
             </div>
           </Card>
 
-          <Card className="border-slate-700 bg-slate-800 p-6">
-            <div className="flex items-center gap-3">
-              <TrendingUp className="w-8 h-8 text-orange-400" />
+          <Card className="border-slate-700 bg-gradient-to-br from-orange-500/10 to-orange-600/5 p-6 hover:from-orange-500/15 hover:to-orange-600/10 transition-all">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-orange-500/20 rounded-xl">
+                <TrendingUp className="w-7 h-7 text-orange-400" />
+              </div>
               <div>
-                <p className="text-xs text-slate-400">Avg Time/Task</p>
+                <p className="text-xs text-slate-400 font-medium">
+                  Avg Time/Task
+                </p>
                 <p className="text-2xl font-bold text-slate-50">
                   {stats.avgTimePerTask}m
                 </p>
@@ -195,40 +227,49 @@ export default function WorkAnalyticsPage() {
         </div>
 
         {/* Filters */}
-        <Card className="border-slate-700 bg-slate-800 p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Filter className="w-5 h-5 text-slate-400" />
-            <h2 className="text-lg font-semibold text-slate-50">Filters</h2>
+        <Card className="border-slate-700 bg-slate-800/80 backdrop-blur p-6 shadow-xl">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-slate-700/50 rounded-lg">
+              <Filter className="w-5 h-5 text-blue-400" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-slate-50">
+                🔍 Filter Options
+              </h2>
+              <p className="text-xs text-slate-400">
+                Narrow down your search results
+              </p>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
-              <label className="text-xs text-slate-400 mb-1 block">
-                Start Date
+              <label className="text-xs text-slate-300 mb-2 block font-medium flex items-center gap-1">
+                📅 Start Date
               </label>
               <Input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="bg-slate-900 border-slate-700"
+                className="bg-slate-900/70 border-slate-600 hover:border-slate-500 focus:border-blue-500 transition-colors"
               />
             </div>
 
             <div>
-              <label className="text-xs text-slate-400 mb-1 block">
-                End Date
+              <label className="text-xs text-slate-300 mb-2 block font-medium flex items-center gap-1">
+                📅 End Date
               </label>
               <Input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="bg-slate-900 border-slate-700"
+                className="bg-slate-900/70 border-slate-600 hover:border-slate-500 focus:border-blue-500 transition-colors"
               />
             </div>
 
             <div>
-              <label className="text-xs text-slate-400 mb-1 block">
-                Department
+              <label className="text-xs text-slate-300 mb-2 flex items-center gap-1 font-medium">
+                🏢 Department
               </label>
               <Select
                 value={selectedDepartment || "all"}
@@ -236,11 +277,11 @@ export default function WorkAnalyticsPage() {
                   setSelectedDepartment(val === "all" ? "" : val)
                 }
               >
-                <SelectTrigger className="bg-slate-900 border-slate-700">
+                <SelectTrigger className="bg-slate-900/70 border-slate-600 hover:border-slate-500 focus:border-blue-500 transition-colors">
                   <SelectValue placeholder="All Departments" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Departments</SelectItem>
+                  <SelectItem value="all">🌐 All Departments</SelectItem>
                   {departments.map((dept) => (
                     <SelectItem key={dept} value={dept}>
                       {dept}
@@ -251,8 +292,8 @@ export default function WorkAnalyticsPage() {
             </div>
 
             <div>
-              <label className="text-xs text-slate-400 mb-1 block">
-                Employee
+              <label className="text-xs text-slate-300 mb-2 flex items-center gap-1 font-medium">
+                👤 Employee
               </label>
               <Select
                 value={selectedEmployee || "all"}
@@ -260,11 +301,11 @@ export default function WorkAnalyticsPage() {
                   setSelectedEmployee(val === "all" ? "" : val)
                 }
               >
-                <SelectTrigger className="bg-slate-900 border-slate-700">
+                <SelectTrigger className="bg-slate-900/70 border-slate-600 hover:border-slate-500 focus:border-blue-500 transition-colors">
                   <SelectValue placeholder="All Employees" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Employees</SelectItem>
+                  <SelectItem value="all">👥 All Employees</SelectItem>
                   {employees.map((emp) => (
                     <SelectItem key={emp._id} value={emp._id}>
                       {emp.name}
@@ -278,24 +319,30 @@ export default function WorkAnalyticsPage() {
               <Button
                 onClick={handleResetFilters}
                 variant="outline"
-                className="w-full border-slate-700 hover:bg-slate-700"
+                className="w-full border-slate-600 hover:bg-slate-700 hover:border-slate-500 transition-all"
               >
-                Reset Filters
+                🔄 Reset Filters
               </Button>
             </div>
           </div>
 
-          <div className="mt-4">
+          <div className="mt-6">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-blue-400" />
               <Input
                 type="text"
-                placeholder="Search tasks, employees, departments..."
+                placeholder="🔎 Search tasks, employees, departments..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-slate-900 border-slate-700"
+                className="pl-11 bg-slate-900/70 border-slate-600 hover:border-slate-500 focus:border-blue-500 text-slate-100 placeholder:text-slate-400 transition-colors"
               />
             </div>
+            {searchQuery && (
+              <p className="text-xs text-slate-400 mt-2">
+                Found {filteredLogs.length} result
+                {filteredLogs.length !== 1 ? "s" : ""}
+              </p>
+            )}
           </div>
         </Card>
 
