@@ -79,8 +79,8 @@ export default function EmployeeDashboard() {
 
   if (!hydrated || !user || user.role !== "employee") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900 text-slate-400">
-        Loading dashboard...
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <p className="text-muted-foreground">Loading dashboard...</p>
       </div>
     );
   }
@@ -91,29 +91,25 @@ export default function EmployeeDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      <header className="border-b border-slate-700 bg-slate-800/50 backdrop-blur sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+    <div className="min-h-screen bg-background">
+      <header className="border-b shadow-sm sticky top-0 z-10 backdrop-blur-sm bg-card/95">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-slate-50">TimeTrack</h1>
-            <p className="text-sm text-slate-400">Employee Dashboard</p>
+            <h1 className="text-2xl font-bold text-foreground">TimeTrack</h1>
+            <p className="text-sm text-muted-foreground">Employee Dashboard</p>
           </div>
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="md:hidden p-2 hover:bg-slate-700 rounded-lg"
+            className="md:hidden p-2 hover:bg-muted rounded-lg"
           >
             <Menu className="w-5 h-5" />
           </button>
           <div className="hidden md:flex items-center gap-4">
             <div className="text-right">
-              <p className="text-sm font-medium text-slate-50">{user.name}</p>
-              <p className="text-xs text-slate-400">{user.department}</p>
+              <p className="text-sm font-medium text-foreground">{user.name}</p>
+              <p className="text-xs text-muted-foreground">{user.department}</p>
             </div>
-            <Button
-              onClick={handleSignOut}
-              variant="outline"
-              className="border-slate-600 text-slate-50 hover:bg-slate-700"
-            >
+            <Button onClick={handleSignOut} variant="outline">
               <LogOut className="w-4 h-4 mr-2" />
               Sign out
             </Button>
@@ -121,7 +117,7 @@ export default function EmployeeDashboard() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-6">
             <WorkTimer />
@@ -132,26 +128,32 @@ export default function EmployeeDashboard() {
           </div>
 
           <div className="space-y-6">
-            <Card className="border-slate-700 bg-slate-800 p-6">
-              <h3 className="text-lg font-semibold text-slate-50 mb-4">
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold text-foreground mb-4">
                 Quick Stats
               </h3>
               <div className="space-y-4">
-                <div className="bg-slate-900 rounded-lg p-4">
-                  <p className="text-xs text-slate-400 mb-1">Hours Today</p>
-                  <p className="text-3xl font-bold text-green-400">
+                <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Hours Today
+                  </p>
+                  <p className="text-3xl font-bold text-green-700 dark:text-green-400">
                     {quickStats.hoursToday.toFixed(1)}h
                   </p>
                 </div>
-                <div className="bg-slate-900 rounded-lg p-4">
-                  <p className="text-xs text-slate-400 mb-1">Break Time</p>
-                  <p className="text-3xl font-bold text-amber-400">
+                <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Break Time
+                  </p>
+                  <p className="text-3xl font-bold text-amber-700 dark:text-amber-400">
                     {quickStats.breakTime}m
                   </p>
                 </div>
-                <div className="bg-slate-900 rounded-lg p-4">
-                  <p className="text-xs text-slate-400 mb-1">Weekly Total</p>
-                  <p className="text-3xl font-bold text-blue-400">
+                <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Weekly Total
+                  </p>
+                  <p className="text-3xl font-bold text-primary">
                     {quickStats.weeklyTotal.toFixed(1)}h
                   </p>
                 </div>
@@ -161,19 +163,22 @@ export default function EmployeeDashboard() {
             <div className="space-y-3">
               <Button
                 onClick={() => router.push("/employee/attendance")}
-                className="w-full bg-green-600 hover:bg-green-700 text-white"
+                className="w-full"
+                variant="default"
               >
                 📅 Attendance
               </Button>
               <Button
                 onClick={() => router.push("/employee/profile")}
-                className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                className="w-full"
+                variant="outline"
               >
                 👤 My Profile
               </Button>
               <Button
                 onClick={() => router.push("/employee/leave-requests")}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                className="w-full"
+                variant="outline"
               >
                 📝 Request Leave
               </Button>

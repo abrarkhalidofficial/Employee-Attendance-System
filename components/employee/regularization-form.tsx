@@ -258,7 +258,7 @@ export function RegularizationForm({ employeeId }: RegularizationFormProps) {
         </CardHeader>
         <CardContent>
           {!myRequests || myRequests.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-muted-foreground">
               No requests yet
             </div>
           ) : (
@@ -266,18 +266,18 @@ export function RegularizationForm({ employeeId }: RegularizationFormProps) {
               {myRequests.map((request) => (
                 <div
                   key={request._id}
-                  className="p-4 border rounded-lg space-y-2 hover:bg-gray-50"
+                  className="p-4 border rounded-lg space-y-2 hover:bg-muted/50 transition-colors"
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-medium">{request.date}</span>
                     {getStatusBadge(request.status)}
                   </div>
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-muted-foreground">
                     {getRequestTypeLabel(request.requestType)}
                   </div>
                   {request.requestedCheckIn && (
                     <div className="text-sm">
-                      <span className="text-gray-600">Check-in: </span>
+                      <span className="text-muted-foreground">Check-in: </span>
                       <span className="font-medium">
                         {request.requestedCheckIn}
                       </span>
@@ -285,32 +285,32 @@ export function RegularizationForm({ employeeId }: RegularizationFormProps) {
                   )}
                   {request.requestedCheckOut && (
                     <div className="text-sm">
-                      <span className="text-gray-600">Check-out: </span>
+                      <span className="text-muted-foreground">Check-out: </span>
                       <span className="font-medium">
                         {request.requestedCheckOut}
                       </span>
                     </div>
                   )}
-                  <div className="text-sm text-gray-600 bg-gray-100 p-2 rounded">
+                  <div className="text-sm text-muted-foreground bg-muted/50 p-2 rounded border">
                     <strong>Reason:</strong> {request.reason}
                   </div>
                   {request.reviewNotes && (
                     <div
-                      className={`text-sm p-2 rounded ${
+                      className={`text-sm p-2 rounded border ${
                         request.status === "approved"
-                          ? "bg-green-50 text-green-700"
-                          : "bg-red-50 text-red-700"
+                          ? "bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800"
+                          : "bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800"
                       }`}
                     >
                       <strong>Review:</strong> {request.reviewNotes}
                       {request.reviewer && (
-                        <span className="block text-xs mt-1">
+                        <span className="block text-xs mt-1 opacity-80">
                           by {request.reviewer.name}
                         </span>
                       )}
                     </div>
                   )}
-                  <div className="text-xs text-gray-400">
+                  <div className="text-xs text-muted-foreground/60">
                     Submitted:{" "}
                     {new Date(request.createdAt).toLocaleString("en-US", {
                       timeZone: "Asia/Karachi",

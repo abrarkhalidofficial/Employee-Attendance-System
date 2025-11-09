@@ -88,60 +88,60 @@ export function AttendanceDashboard() {
     <div className="space-y-6">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-linear-to-br from-blue-50 to-blue-100 border-blue-200">
+        <Card className="bg-primary/5 border-primary/20">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Users className="h-4 w-4 text-blue-600" />
+              <Users className="h-4 w-4 text-primary" />
               Total Present
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-blue-600">
+            <div className="text-3xl font-bold text-primary">
               {stats.present}
-              <span className="text-sm text-gray-600 ml-2">
+              <span className="text-sm text-muted-foreground ml-2">
                 / {stats.total}
               </span>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-linear-to-br from-yellow-50 to-yellow-100 border-yellow-200">
+        <Card className="bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-800">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 text-yellow-600" />
+              <AlertCircle className="h-4 w-4 text-yellow-700 dark:text-yellow-400" />
               Late Arrivals
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-yellow-600">
+            <div className="text-3xl font-bold text-yellow-700 dark:text-yellow-400">
               {stats.late}
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-linear-to-br from-red-50 to-red-100 border-red-200">
+        <Card className="bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Users className="h-4 w-4 text-red-600" />
+              <Users className="h-4 w-4 text-red-700 dark:text-red-400" />
               Absent
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-red-600">
+            <div className="text-3xl font-bold text-red-700 dark:text-red-400">
               {stats.absent}
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-linear-to-br from-green-50 to-green-100 border-green-200">
+        <Card className="bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-green-600" />
+              <TrendingUp className="h-4 w-4 text-green-700 dark:text-green-400" />
               Total Overtime
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-green-600">
+            <div className="text-3xl font-bold text-green-700 dark:text-green-400">
               {formatHours(stats.overtime)}
             </div>
           </CardContent>

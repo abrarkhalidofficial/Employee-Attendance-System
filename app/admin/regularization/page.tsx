@@ -26,16 +26,18 @@ export default function AdminRegularizationPage() {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-50 to-gray-100">
-      <header className="border-b bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold">✅ Regularization Requests</h1>
-          <p className="text-sm text-gray-600">
+    <div className="min-h-screen bg-background">
+      <header className="border-b shadow-sm sticky top-0 z-10 backdrop-blur-sm bg-card/95">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <h1 className="text-3xl font-bold text-foreground">
+            ✅ Regularization Requests
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
             Review and approve attendance regularization requests
           </p>
         </div>
       </header>
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <RegularizationPanel adminId={user._id as Id<"users">} />
       </main>
     </div>

@@ -150,16 +150,16 @@ export function AttendanceTracker({ employeeId }: AttendanceTrackerProps) {
   return (
     <div className="space-y-4">
       {/* Current Time Card */}
-      <Card className="bg-linear-to-br from-blue-50 to-indigo-50 border-blue-200">
+      <Card className="bg-primary/5 border-primary/20">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5 text-blue-600" />
+            <Clock className="h-5 w-5 text-primary" />
             Current Time (PKT)
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-4xl font-bold text-blue-600">{currentTime}</div>
-          <div className="text-sm text-gray-600 mt-1">
+          <div className="text-4xl font-bold text-primary">{currentTime}</div>
+          <div className="text-sm text-muted-foreground mt-1">
             {new Date().toLocaleDateString("en-US", {
               timeZone: "Asia/Karachi",
               weekday: "long",
@@ -221,14 +221,14 @@ export function AttendanceTracker({ employeeId }: AttendanceTrackerProps) {
                 </div>
               )}
               {todayAttendance.isLate && (
-                <div className="flex items-center gap-2 text-sm text-yellow-600 bg-yellow-50 p-2 rounded">
+                <div className="flex items-center gap-2 text-sm text-yellow-700 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-950/50 p-2 rounded border border-yellow-200 dark:border-yellow-800">
                   <AlertCircle className="h-4 w-4" />
                   <span>Late by {todayAttendance.lateBy} minutes</span>
                 </div>
               )}
               {todayAttendance.overtimeHours &&
                 todayAttendance.overtimeHours > 0 && (
-                  <div className="flex items-center justify-between text-sm text-green-600 bg-green-50 p-2 rounded">
+                  <div className="flex items-center justify-between text-sm text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/50 p-2 rounded border border-green-200 dark:border-green-800">
                     <span>🎉 Overtime:</span>
                     <span className="font-medium">
                       {formatHours(todayAttendance.overtimeHours)}
@@ -240,17 +240,17 @@ export function AttendanceTracker({ employeeId }: AttendanceTrackerProps) {
 
           {/* Location Status */}
           {locationError ? (
-            <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 p-2 rounded">
+            <div className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 p-2 rounded border border-amber-200 dark:border-amber-800">
               <MapPin className="h-4 w-4" />
               <span>{locationError}</span>
             </div>
           ) : location ? (
-            <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 p-2 rounded">
+            <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/50 p-2 rounded border border-green-200 dark:border-green-800">
               <MapPin className="h-4 w-4" />
               <span>Location detected ✓</span>
             </div>
           ) : (
-            <div className="flex items-center gap-2 text-sm text-gray-600">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <MapPin className="h-4 w-4 animate-pulse" />
               <span>Getting location...</span>
             </div>
@@ -277,7 +277,7 @@ export function AttendanceTracker({ employeeId }: AttendanceTrackerProps) {
                 Check Out
               </Button>
             ) : (
-              <div className="flex-1 text-center py-3 bg-gray-100 rounded-md text-sm text-gray-600">
+              <div className="flex-1 text-center py-3 bg-muted rounded-md text-sm text-muted-foreground">
                 ✓ Attendance completed for today
               </div>
             )}

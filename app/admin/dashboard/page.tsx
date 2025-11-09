@@ -91,32 +91,28 @@ export default function AdminDashboard() {
 
   if (!hydrated || !user || user.role !== "admin") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900 text-slate-400">
-        Loading dashboard...
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <p className="text-muted-foreground">Loading dashboard...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      <header className="border-b border-slate-700 bg-slate-800/50 backdrop-blur sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+    <div className="min-h-screen bg-background">
+      <header className="border-b shadow-sm sticky top-0 z-10 backdrop-blur-sm bg-card/95">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-slate-50">TimeTrack</h1>
-            <p className="text-sm text-slate-400">Admin Dashboard</p>
+            <h1 className="text-2xl font-bold text-foreground">TimeTrack</h1>
+            <p className="text-sm text-muted-foreground">Admin Dashboard</p>
           </div>
           <div className="flex gap-2">
-            <Button
-              onClick={() => setIsCreateDialogOpen(true)}
-              className="bg-green-600 hover:bg-green-700 text-white"
-            >
+            <Button onClick={() => setIsCreateDialogOpen(true)}>
               <Plus className="w-4 h-4 mr-2" />
               Create Employee
             </Button>
             <Button
               onClick={() => router.push("/admin/analytics")}
               variant="outline"
-              className="border-slate-600 text-slate-50 hover:bg-slate-700"
             >
               <BarChart3 className="w-4 h-4 mr-2" />
               Analytics
@@ -124,7 +120,6 @@ export default function AdminDashboard() {
             <Button
               onClick={() => router.push("/admin/attendance")}
               variant="outline"
-              className="border-slate-600 text-slate-50 hover:bg-slate-700"
             >
               <Calendar className="w-4 h-4 mr-2" />
               Attendance
@@ -132,7 +127,6 @@ export default function AdminDashboard() {
             <Button
               onClick={() => router.push("/admin/regularization")}
               variant="outline"
-              className="border-slate-600 text-slate-50 hover:bg-slate-700"
             >
               <Clock className="w-4 h-4 mr-2" />
               Regularization
@@ -140,7 +134,6 @@ export default function AdminDashboard() {
             <Button
               onClick={() => router.push("/admin/work-analytics")}
               variant="outline"
-              className="border-slate-600 text-slate-50 hover:bg-slate-700"
             >
               <TrendingUp className="w-4 h-4 mr-2" />
               Work Logs
@@ -148,16 +141,11 @@ export default function AdminDashboard() {
             <Button
               onClick={() => router.push("/admin/settings")}
               variant="outline"
-              className="border-slate-600 text-slate-50 hover:bg-slate-700"
             >
               <Settings className="w-4 h-4 mr-2" />
               Settings
             </Button>
-            <Button
-              onClick={handleSignOut}
-              variant="outline"
-              className="border-slate-600 text-slate-50 hover:bg-slate-700"
-            >
+            <Button onClick={handleSignOut} variant="outline">
               <LogOut className="w-4 h-4 mr-2" />
               Sign out
             </Button>
@@ -165,50 +153,52 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-8 space-y-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="border-slate-700 bg-slate-800 p-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="bg-primary/5 border-primary/20 p-6">
             <div className="flex items-center gap-3">
-              <Users className="w-8 h-8 text-blue-400" />
+              <Users className="w-8 h-8 text-primary" />
               <div>
-                <p className="text-xs text-slate-400">Total Employees</p>
-                <p className="text-2xl font-bold text-slate-50">
+                <p className="text-xs text-muted-foreground">Total Employees</p>
+                <p className="text-2xl font-bold text-foreground">
                   {stats.totalEmployees}
                 </p>
               </div>
             </div>
           </Card>
 
-          <Card className="border-slate-700 bg-slate-800 p-6">
+          <Card className="bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800 p-6">
             <div className="flex items-center gap-3">
-              <Clock className="w-8 h-8 text-green-400" />
+              <Clock className="w-8 h-8 text-green-700 dark:text-green-400" />
               <div>
-                <p className="text-xs text-slate-400">Present Today</p>
-                <p className="text-2xl font-bold text-slate-50">
+                <p className="text-xs text-muted-foreground">Present Today</p>
+                <p className="text-2xl font-bold text-foreground">
                   {stats.presentToday}
                 </p>
               </div>
             </div>
           </Card>
 
-          <Card className="border-slate-700 bg-slate-800 p-6">
+          <Card className="bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800 p-6">
             <div className="flex items-center gap-3">
-              <Calendar className="w-8 h-8 text-amber-400" />
+              <Calendar className="w-8 h-8 text-amber-700 dark:text-amber-400" />
               <div>
-                <p className="text-xs text-slate-400">Pending Requests</p>
-                <p className="text-2xl font-bold text-slate-50">
+                <p className="text-xs text-muted-foreground">
+                  Pending Requests
+                </p>
+                <p className="text-2xl font-bold text-foreground">
                   {stats.pendingRequests}
                 </p>
               </div>
             </div>
           </Card>
 
-          <Card className="border-slate-700 bg-slate-800 p-6">
+          <Card className="p-6">
             <div className="flex items-center gap-3">
-              <Clock className="w-8 h-8 text-purple-400" />
+              <Clock className="w-8 h-8 text-primary" />
               <div>
-                <p className="text-xs text-slate-400">Avg Hours/Day</p>
-                <p className="text-2xl font-bold text-slate-50">
+                <p className="text-xs text-muted-foreground">Avg Hours/Day</p>
+                <p className="text-2xl font-bold text-foreground">
                   {stats.avgHoursPerDay}h
                 </p>
               </div>

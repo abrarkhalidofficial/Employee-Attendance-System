@@ -160,20 +160,20 @@ export function ProfileEdit({ userId }: ProfileEditProps) {
           {/* Read-only Fields */}
           <div className="space-y-4">
             <div>
-              <Label className="text-gray-600">Name</Label>
-              <div className="mt-1 p-2 bg-gray-50 rounded border">
+              <Label className="text-muted-foreground">Name</Label>
+              <div className="mt-1 p-2 bg-muted/50 rounded border">
                 {profile.name}
               </div>
             </div>
             <div>
-              <Label className="text-gray-600">Email</Label>
-              <div className="mt-1 p-2 bg-gray-50 rounded border">
+              <Label className="text-muted-foreground">Email</Label>
+              <div className="mt-1 p-2 bg-muted/50 rounded border">
                 {profile.email}
               </div>
             </div>
             <div>
-              <Label className="text-gray-600">Department</Label>
-              <div className="mt-1 p-2 bg-gray-50 rounded border">
+              <Label className="text-muted-foreground">Department</Label>
+              <div className="mt-1 p-2 bg-muted/50 rounded border">
                 {profile.department}
               </div>
             </div>
@@ -227,7 +227,7 @@ export function ProfileEdit({ userId }: ProfileEditProps) {
               <div>
                 <Label
                   htmlFor="emergencyContact"
-                  className="text-sm text-gray-600"
+                  className="text-sm text-muted-foreground"
                 >
                   Contact Name
                 </Label>
@@ -247,7 +247,7 @@ export function ProfileEdit({ userId }: ProfileEditProps) {
               <div>
                 <Label
                   htmlFor="emergencyPhone"
-                  className="text-sm text-gray-600"
+                  className="text-sm text-muted-foreground"
                 >
                   Contact Phone
                 </Label>
