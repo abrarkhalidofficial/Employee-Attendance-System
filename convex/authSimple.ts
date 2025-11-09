@@ -23,31 +23,24 @@ export const signUpMutation = mutation({
   },
   handler: async (ctx, args) => {
     const { email, name, password, role } = args;
-
-    // Check if user already exists
     const existingUser = await ctx.db
       .query("users")
       .withIndex("by_email", (q) => q.eq("email", email))
       .first();
-
     if (existingUser) {
       throw new Error("User with this email already exists");
     }
-
-    // Hash password
     const hashedPassword = simpleHash(password);
-
-    // Create user
+    const normalizedRole = role === "admin" ? "ADMIN" : "EMPLOYEE";
     const userId = await ctx.db.insert("users", {
       email,
-      name,
-      role,
-      password: hashedPassword,
-      status: "active",
+      displayName: name,
+      role: normalizedRole,
+      passwordHash: hashedPassword,
+      isActive: true,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
-
     return userId;
   },
 });
@@ -68,24 +61,19 @@ export const signInQuery = query({
     if (!user) {
       throw new Error("User not found. Please check your email or sign up.");
     }
-
+    if (!user.isActive) {
+      throw new Error("User account is disabled.");
+    }
     const hashedPassword = simpleHash(password);
-
-    // Log for debugging (remove in production)
-    console.log("Stored hash:", user.password);
-    console.log("Input hash:", hashedPassword);
-
-    if (user.password !== hashedPassword) {
+    if (user.passwordHash !== hashedPassword) {
       throw new Error("Invalid password. Please try again.");
     }
-
-    // Return user without password
     return {
       _id: user._id,
       email: user.email,
-      name: user.name,
+      name: user.displayName ?? "",
       role: user.role,
-      status: user.status,
+      isActive: user.isActive,
     };
   },
 });
@@ -97,10 +85,10 @@ export const listUsers = query({
     return users.map((u) => ({
       _id: u._id,
       email: u.email,
-      name: u.name,
+      name: u.displayName,
       role: u.role,
-      // Show first 10 chars of password hash for debugging
-      passwordHash: u.password.substring(0, 10) + "...",
+      isActive: u.isActive,
+      passwordHash: u.passwordHash?.substring(0, 10) ?? "",
     }));
   },
 });

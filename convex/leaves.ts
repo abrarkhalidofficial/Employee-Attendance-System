@@ -1,129 +1,196 @@
-import { mutation, query } from "./_generated/server"
-import { v } from "convex/values"
+import { mutation, query, MutationCtx } from "./_generated/server";
+import { v } from "convex/values";
+import { Doc, Id } from "./_generated/dataModel";
+import { recordAudit } from "./lib/audit";
+import { throwError } from "./lib/errors";
+import { requireEmployee, requireRole, requireViewer } from "./lib/rbac";
+import { now } from "./lib/time";
 
-export const createLeaveRequest = mutation({
-  args: {
-    employeeId: v.id("employees"),
-    startDate: v.number(),
-    endDate: v.number(),
-    type: v.union(v.literal("sick"), v.literal("casual"), v.literal("personal"), v.literal("other")),
-    reason: v.string(),
-    userId: v.id("users"),
-  },
-  handler: async (ctx, args) => {
-    const { employeeId, startDate, endDate, type, reason, userId } = args
-
-    const leaveId = await ctx.db.insert("leaves", {
-      employeeId,
-      startDate,
-      endDate,
-      type,
-      reason,
-      status: "pending",
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    })
-
-    // Log activity
-    await ctx.db.insert("activityLog", {
-      userId,
-      action: "CREATE",
-      entityType: "leave",
-      entityId: leaveId,
-      changes: {
-        after: { type, reason },
-      },
-      timestamp: Date.now(),
-    })
-
-    return leaveId
-  },
-})
-
-export const getLeavesByEmployee = query({
-  args: {
-    employeeId: v.id("employees"),
-  },
-  handler: async (ctx, args) => {
-    return await ctx.db
-      .query("leaves")
-      .withIndex("by_employeeId", (q) => q.eq("employeeId", args.employeeId))
-      .collect()
-  },
-})
-
-export const getAllLeaves = query({
+export const types = query({
   handler: async (ctx) => {
-    return await ctx.db.query("leaves").collect()
+    return await ctx.db.query("leaveTypes").collect();
   },
-})
+});
 
-export const approveLeave = mutation({
+export const mine = query({
+  handler: async (ctx) => {
+    const viewer = await requireViewer(ctx);
+    const employee = await requireEmployee(ctx, viewer.user);
+    return await ctx.db
+      .query("leaveRequests")
+      .withIndex("by_emp_dates", (q) => q.eq("employeeId", employee._id))
+      .collect();
+  },
+});
+
+export const request = mutation({
   args: {
-    leaveId: v.id("leaves"),
-    comments: v.optional(v.string()),
-    userId: v.id("users"),
+    leaveTypeId: v.id("leaveTypes"),
+    startDate: v.string(),
+    endDate: v.string(),
+    days: v.number(),
+    reason: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const { leaveId, comments, userId } = args
+    const viewer = await requireRole(ctx, ["EMPLOYEE", "ADMIN"]);
+    const employee = await requireEmployee(ctx, viewer.user);
+    validateDateRange(args.startDate, args.endDate);
 
-    const leave = await ctx.db.get(leaveId)
-    if (!leave) throw new Error("Leave request not found")
+    await assertNoOverlap(ctx, employee._id, args.startDate, args.endDate);
 
-    await ctx.db.patch(leaveId, {
-      status: "approved",
-      approvedBy: userId,
-      comments,
-      updatedAt: Date.now(),
-    })
+    const timestamp = now();
+    const requestId = await ctx.db.insert("leaveRequests", {
+      employeeId: employee._id,
+      leaveTypeId: args.leaveTypeId,
+      status: "PENDING",
+      startDate: args.startDate,
+      endDate: args.endDate,
+      days: args.days,
+      reason: args.reason,
+      requestedAt: timestamp,
+    });
 
-    await ctx.db.insert("activityLog", {
-      userId,
-      action: "APPROVE",
-      entityType: "leave",
-      entityId: leaveId,
-      changes: {
-        before: { status: leave.status },
-        after: { status: "approved" },
-      },
-      timestamp: Date.now(),
-    })
+    await recordAudit(ctx, {
+      actorUserId: viewer.user._id,
+      entityType: "leaveRequest",
+      entityId: requestId,
+      action: "CREATE",
+      after: args,
+    });
 
-    return leaveId
+    return requestId;
   },
-})
+});
 
-export const rejectLeave = mutation({
+export const approve = mutation({
   args: {
-    leaveId: v.id("leaves"),
-    comments: v.string(),
-    userId: v.id("users"),
+    leaveId: v.id("leaveRequests"),
+    comment: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const { leaveId, comments, userId } = args
-
-    const leave = await ctx.db.get(leaveId)
-    if (!leave) throw new Error("Leave request not found")
-
-    await ctx.db.patch(leaveId, {
-      status: "rejected",
-      approvedBy: userId,
-      comments,
-      updatedAt: Date.now(),
-    })
-
-    await ctx.db.insert("activityLog", {
-      userId,
-      action: "REJECT",
-      entityType: "leave",
-      entityId: leaveId,
-      changes: {
-        before: { status: leave.status },
-        after: { status: "rejected" },
-      },
-      timestamp: Date.now(),
-    })
-
-    return leaveId
+    const viewer = await requireRole(ctx, ["ADMIN"]);
+    const leave = await ctx.db.get(args.leaveId);
+    if (!leave) {
+      throwError({ code: "NOT_FOUND", message: "Leave request not found." });
+    }
+    if (leave.status === "APPROVED") {
+      return leave._id;
+    }
+    await ctx.db.patch(leave._id, {
+      status: "APPROVED",
+      decidedAt: now(),
+      decidedBy: viewer.user._id,
+      meta: { comment: args.comment },
+    });
+    await recordAudit(ctx, {
+      actorUserId: viewer.user._id,
+      entityType: "leaveRequest",
+      entityId: leave._id,
+      action: "UPDATE",
+      before: leave,
+      after: { ...leave, status: "APPROVED" },
+    });
+    return leave._id;
   },
-})
+});
+
+export const reject = mutation({
+  args: {
+    leaveId: v.id("leaveRequests"),
+    comment: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const viewer = await requireRole(ctx, ["ADMIN"]);
+    const leave = await ctx.db.get(args.leaveId);
+    if (!leave) {
+      throwError({ code: "NOT_FOUND", message: "Leave request not found." });
+    }
+    await ctx.db.patch(leave._id, {
+      status: "REJECTED",
+      decidedAt: now(),
+      decidedBy: viewer.user._id,
+      meta: { comment: args.comment },
+    });
+    await recordAudit(ctx, {
+      actorUserId: viewer.user._id,
+      entityType: "leaveRequest",
+      entityId: leave._id,
+      action: "UPDATE",
+      before: leave,
+      after: { ...leave, status: "REJECTED" },
+    });
+    return leave._id;
+  },
+});
+
+export const cancel = mutation({
+  args: {
+    leaveId: v.id("leaveRequests"),
+  },
+  handler: async (ctx, args) => {
+    const viewer = await requireRole(ctx, ["EMPLOYEE", "ADMIN"]);
+    const leave = await ctx.db.get(args.leaveId);
+    if (!leave) {
+      throwError({ code: "NOT_FOUND", message: "Leave request not found." });
+    }
+
+    const employee = await requireEmployee(ctx, viewer.user);
+    if (viewer.user.role !== "ADMIN" && leave.employeeId !== employee._id) {
+      throwError({
+        code: "FORBIDDEN",
+        message: "You cannot cancel this leave.",
+      });
+    }
+
+    await ctx.db.patch(leave._id, {
+      status: "CANCELLED",
+      decidedAt: now(),
+      decidedBy: viewer.user._id,
+    });
+
+    await recordAudit(ctx, {
+      actorUserId: viewer.user._id,
+      entityType: "leaveRequest",
+      entityId: leave._id,
+      action: "UPDATE",
+      before: leave,
+      after: { ...leave, status: "CANCELLED" },
+    });
+    return leave._id;
+  },
+});
+
+function validateDateRange(start: string, end: string) {
+  if (start > end) {
+    throwError({
+      code: "VALIDATION_ERROR",
+      message: "Start date must be before end date.",
+      details: { field: "startDate" },
+    });
+  }
+}
+
+async function assertNoOverlap(
+  ctx: MutationCtx,
+  employeeId: Id<"employees">,
+  start: string,
+  end: string
+) {
+  const entries = await ctx.db
+    .query("leaveRequests")
+    .withIndex("by_emp_dates", (q) => q.eq("employeeId", employeeId))
+    .collect();
+
+  const conflicts = entries.some(
+    (leave: Doc<"leaveRequests">) =>
+      ["PENDING", "APPROVED"].includes(leave.status) &&
+      !(leave.endDate < start || leave.startDate > end)
+  );
+
+  if (conflicts) {
+    throwError({
+      code: "LEAVE_OVERLAP",
+      message: "Leave request overlaps with an existing one.",
+    });
+  }
+}

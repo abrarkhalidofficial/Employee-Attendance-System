@@ -1,154 +1,256 @@
-import { mutation, query } from "./_generated/server";
+import { mutation, query, QueryCtx } from "./_generated/server";
 import { v } from "convex/values";
+import { Id } from "./_generated/dataModel";
+import { recordAudit } from "./lib/audit";
+import { throwError } from "./lib/errors";
+import { requireRole, requireViewer } from "./lib/rbac";
+import { now } from "./lib/time";
 
-export const createEmployee = mutation({
+type ListArgs = {
+  q?: string;
+  departmentId?: Id<"departments">;
+  isActive?: boolean;
+  page?: number;
+  pageSize?: number;
+};
+
+const MAX_PAGE_SIZE = 100;
+
+export const list = query({
   args: {
-    userId: v.id("users"),
-    name: v.string(),
-    email: v.string(),
-    department: v.string(),
-    position: v.string(),
+    q: v.optional(v.string()),
+    departmentId: v.optional(v.id("departments")),
+    isActive: v.optional(v.boolean()),
+    page: v.optional(v.number()),
+    pageSize: v.optional(v.number()),
   },
-  handler: async (ctx, args) => {
-    const { userId, name, email, department, position } = args;
+  handler: async (ctx, args: ListArgs) => {
+    await requireRole(ctx, ["ADMIN"]);
+    const employees = await fetchEmployees(ctx, args);
+    const page = Math.max(args.page ?? 0, 0);
+    const pageSize = Math.min(args.pageSize ?? 20, MAX_PAGE_SIZE);
+    const start = page * pageSize;
 
-    const employeeId = await ctx.db.insert("employees", {
-      userId,
-      name,
-      email,
-      department,
-      position,
-      joinDate: Date.now(),
-      status: "active",
-      currentStatus: "offline",
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    });
-
-    // Log activity
-    await ctx.db.insert("activityLog", {
-      userId,
-      action: "CREATE",
-      entityType: "employee",
-      entityId: employeeId,
-      changes: {
-        after: { name, email, department, position },
-      },
-      timestamp: Date.now(),
-    });
-
-    return employeeId;
+    return {
+      total: employees.length,
+      page,
+      pageSize,
+      items: employees.slice(start, start + pageSize),
+    };
   },
 });
 
-export const getAllEmployees = query({
-  handler: async (ctx) => {
-    return await ctx.db.query("employees").collect();
-  },
-});
+export const get = query({
+  args: { employeeId: v.id("employees") },
+  handler: async (ctx, { employeeId }) => {
+    const viewer = await requireViewer(ctx);
+    const employee = await ctx.db.get(employeeId);
+    if (!employee) {
+      throwError({ code: "NOT_FOUND", message: "Employee not found." });
+    }
 
-export const getEmployeeById = query({
-  args: {
-    employeeId: v.id("employees"),
-  },
-  handler: async (ctx, args) => {
-    return await ctx.db.get(args.employeeId);
+    if (viewer.user.role !== "ADMIN" && employee.userId !== viewer.user._id) {
+      throwError({
+        code: "FORBIDDEN",
+        message: "You cannot view this employee.",
+      });
+    }
+
+    const user = await ctx.db.get(employee.userId);
+    return {
+      ...employee,
+      email: user?.email,
+    };
   },
 });
 
 export const getEmployeeByUserId = query({
-  args: {
-    userId: v.id("users"),
-  },
-  handler: async (ctx, args) => {
-    return await ctx.db
+  args: { userId: v.id("users") },
+  handler: async (ctx, { userId }) => {
+    const employee = await ctx.db
       .query("employees")
-      .withIndex("by_userId", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user", (q) => q.eq("userId", userId))
       .first();
+
+    if (!employee) {
+      return null;
+    }
+
+    const user = await ctx.db.get(employee.userId);
+    return {
+      ...employee,
+      email: user?.email,
+    };
   },
 });
 
-export const updateEmployeeStatus = mutation({
+export const create = mutation({
   args: {
-    employeeId: v.id("employees"),
-    status: v.union(
-      v.literal("working"),
-      v.literal("break"),
-      v.literal("task"),
-      v.literal("offline")
-    ),
-    reason: v.optional(v.string()),
-    expectedReturnTime: v.optional(v.number()),
-    userId: v.id("users"),
+    email: v.string(),
+    employeeCode: v.string(),
+    firstName: v.string(),
+    lastName: v.string(),
+    departmentId: v.optional(v.id("departments")),
+    managerId: v.optional(v.id("employees")),
+    timezone: v.string(),
+    hireDate: v.string(),
+    role: v.optional(v.union(v.literal("EMPLOYEE"), v.literal("ADMIN"))),
   },
   handler: async (ctx, args) => {
-    const { employeeId, status, reason, expectedReturnTime, userId } = args;
+    const viewer = await requireRole(ctx, ["ADMIN"]);
+    const timestamp = now();
 
-    const employee = await ctx.db.get(employeeId);
-    if (!employee) throw new Error("Employee not found");
+    const existingUser = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", args.email))
+      .first();
+    if (existingUser) {
+      throwError({
+        code: "VALIDATION_ERROR",
+        message: "Email already exists.",
+        details: { field: "email" },
+      });
+    }
 
-    // Update employee status
-    await ctx.db.patch(employeeId, {
-      currentStatus: status,
-      statusReason: reason,
-      expectedReturnTime: expectedReturnTime,
-      updatedAt: Date.now(),
+    const userId = await ctx.db.insert("users", {
+      email: args.email,
+      role: args.role ?? "EMPLOYEE",
+      isActive: true,
+      createdAt: timestamp,
+      updatedAt: timestamp,
     });
 
-    // Log status history
-    await ctx.db.insert("statusHistory", {
-      employeeId,
-      status,
-      reason,
-      expectedReturnTime,
-      createdAt: Date.now(),
-    });
-
-    // Log activity
-    await ctx.db.insert("activityLog", {
+    const employeeId = await ctx.db.insert("employees", {
       userId,
-      action: "UPDATE_STATUS",
+      employeeCode: args.employeeCode,
+      firstName: args.firstName,
+      lastName: args.lastName,
+      departmentId: args.departmentId,
+      managerId: args.managerId,
+      timezone: args.timezone,
+      hireDate: args.hireDate,
+      isActive: true,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    });
+
+    await recordAudit(ctx, {
+      actorUserId: viewer.user._id,
       entityType: "employee",
       entityId: employeeId,
-      changes: {
-        before: { currentStatus: employee.currentStatus },
-        after: { currentStatus: status, reason },
-      },
-      timestamp: Date.now(),
+      action: "CREATE",
+      after: args,
     });
 
     return employeeId;
   },
 });
 
-export const deactivateEmployee = mutation({
+export const update = mutation({
   args: {
     employeeId: v.id("employees"),
-    userId: v.id("users"),
+    firstName: v.optional(v.string()),
+    lastName: v.optional(v.string()),
+    departmentId: v.optional(v.id("departments")),
+    managerId: v.optional(v.id("employees")),
+    timezone: v.optional(v.string()),
+    hireDate: v.optional(v.string()),
+    employeeCode: v.optional(v.string()),
+    isActive: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
-    const { employeeId, userId } = args;
+    const viewer = await requireRole(ctx, ["ADMIN"]);
+    const employee = await ctx.db.get(args.employeeId);
+    if (!employee) {
+      throwError({ code: "NOT_FOUND", message: "Employee not found." });
+    }
 
-    const employee = await ctx.db.get(employeeId);
-    if (!employee) throw new Error("Employee not found");
+    const updates: Record<string, unknown> = {};
+    for (const key of [
+      "firstName",
+      "lastName",
+      "departmentId",
+      "managerId",
+      "timezone",
+      "hireDate",
+      "employeeCode",
+      "isActive",
+    ] as const) {
+      if (args[key] !== undefined && args[key] !== employee[key]) {
+        updates[key] = args[key];
+      }
+    }
 
-    await ctx.db.patch(employeeId, {
-      status: "inactive",
-      updatedAt: Date.now(),
-    });
+    if (Object.keys(updates).length === 0) {
+      return employee._id;
+    }
 
-    await ctx.db.insert("activityLog", {
-      userId,
-      action: "DEACTIVATE",
+    updates.updatedAt = now();
+
+    await ctx.db.patch(employee._id, updates);
+
+    if (updates.isActive !== undefined) {
+      await ctx.db.patch(employee.userId, {
+        isActive: updates.isActive as boolean,
+      });
+    }
+
+    await recordAudit(ctx, {
+      actorUserId: viewer.user._id,
       entityType: "employee",
-      entityId: employeeId,
-      changes: {
-        before: { status: employee.status },
-        after: { status: "inactive" },
-      },
-      timestamp: Date.now(),
+      entityId: employee._id,
+      action: "UPDATE",
+      before: employee,
+      after: { ...employee, ...updates },
     });
 
-    return employeeId;
+    return employee._id;
   },
 });
+
+async function fetchEmployees(ctx: QueryCtx, args: ListArgs) {
+  let rows;
+  if (args.departmentId) {
+    rows = await ctx.db
+      .query("employees")
+      .withIndex("by_department", (q) =>
+        q.eq("departmentId", args.departmentId!)
+      )
+      .collect();
+  } else if (typeof args.isActive === "boolean") {
+    rows = await ctx.db
+      .query("employees")
+      .withIndex("by_active", (q) => q.eq("isActive", args.isActive!))
+      .collect();
+  } else {
+    rows = await ctx.db.query("employees").collect();
+  }
+
+  const filtered = rows.filter((employee) => {
+    if (
+      typeof args.isActive === "boolean" &&
+      employee.isActive !== args.isActive
+    ) {
+      return false;
+    }
+    if (!args.q) {
+      return true;
+    }
+    const needle = args.q.toLowerCase();
+    return (
+      employee.firstName.toLowerCase().includes(needle) ||
+      employee.lastName.toLowerCase().includes(needle) ||
+      employee.employeeCode.toLowerCase().includes(needle)
+    );
+  });
+
+  return Promise.all(
+    filtered.map(async (employee) => {
+      const user = await ctx.db.get(employee.userId);
+      return {
+        ...employee,
+        email: user?.email,
+      };
+    })
+  );
+}

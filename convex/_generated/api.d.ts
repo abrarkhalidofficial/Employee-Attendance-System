@@ -9,14 +9,18 @@
  */
 
 import type * as activityLog from "../activityLog.js";
+import type * as attendance from "../attendance.js";
 import type * as auth from "../auth.js";
 import type * as authSimple from "../authSimple.js";
 import type * as employees from "../employees.js";
 import type * as http from "../http.js";
 import type * as leaves from "../leaves.js";
-import type * as statusHistory from "../statusHistory.js";
-import type * as users from "../users.js";
-import type * as workingHours from "../workingHours.js";
+import type * as lib_attendance from "../lib/attendance.js";
+import type * as lib_audit from "../lib/audit.js";
+import type * as lib_errors from "../lib/errors.js";
+import type * as lib_rbac from "../lib/rbac.js";
+import type * as lib_time from "../lib/time.js";
+import type * as status from "../status.js";
 
 import type {
   ApiFromModules,
@@ -34,14 +38,18 @@ import type {
  */
 declare const fullApi: ApiFromModules<{
   activityLog: typeof activityLog;
+  attendance: typeof attendance;
   auth: typeof auth;
   authSimple: typeof authSimple;
   employees: typeof employees;
   http: typeof http;
   leaves: typeof leaves;
-  statusHistory: typeof statusHistory;
-  users: typeof users;
-  workingHours: typeof workingHours;
+  "lib/attendance": typeof lib_attendance;
+  "lib/audit": typeof lib_audit;
+  "lib/errors": typeof lib_errors;
+  "lib/rbac": typeof lib_rbac;
+  "lib/time": typeof lib_time;
+  status: typeof status;
 }>;
 declare const fullApiWithMounts: typeof fullApi;
 

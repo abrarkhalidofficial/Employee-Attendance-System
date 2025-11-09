@@ -1,13 +1,16 @@
-import { query } from "./_generated/server"
+import { query } from "./_generated/server";
+import { v } from "convex/values";
 
-export const getActivityLogs = query({
-  handler: async (ctx) => {
-    const logs = await ctx.db
-      .query("activityLog")
-      .withIndex("by_timestamp", (q) => q)
-      .order("desc")
-      .take(100)
-
-    return logs
+export const list = query({
+  args: {
+    limit: v.optional(v.number()),
   },
-})
+  handler: async (ctx, args) => {
+    const max = Math.min(args.limit ?? 100, 500);
+    return await ctx.db
+      .query("activityLog")
+      .withIndex("by_time", (q) => q)
+      .order("desc")
+      .take(max);
+  },
+});
