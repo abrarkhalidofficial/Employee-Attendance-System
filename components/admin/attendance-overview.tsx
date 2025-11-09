@@ -1,18 +1,18 @@
 "use client"
 
-import type { TimeLog, Employee } from "@/lib/mock-data"
+import type { EmployeeDoc, TimeLogDoc } from "@/lib/types"
 import { Card } from "@/components/ui/card"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 
 interface AttendanceOverviewProps {
-  timeLogs: TimeLog[]
-  employees: Employee[]
+  timeLogs: TimeLogDoc[]
+  employees: EmployeeDoc[]
 }
 
 export function AttendanceOverview({ timeLogs, employees }: AttendanceOverviewProps) {
   // Aggregate hours by employee
   const employeeHours = employees.map((emp) => {
-    const logs = timeLogs.filter((log) => log.employeeId === emp.id)
+    const logs = timeLogs.filter((log) => log.employeeId === emp._id)
     const totalHours = logs.reduce((sum, log) => sum + log.totalHours, 0)
     return {
       name: emp.name.split(" ")[0], // First name only

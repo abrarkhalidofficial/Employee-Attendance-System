@@ -1,13 +1,13 @@
 "use client"
 
-import type { Employee } from "@/lib/mock-data"
+import type { EmployeeDoc } from "@/lib/types"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Users, Edit2, Trash2 } from "lucide-react"
 
 interface EmployeeTableProps {
-  employees: Employee[]
-  onEdit?: (employee: Employee) => void
+  employees: EmployeeDoc[]
+  onEdit?: (employee: EmployeeDoc) => void
   onDelete?: (employeeId: string) => void
 }
 
@@ -34,7 +34,7 @@ export function EmployeeTable({ employees, onEdit, onDelete }: EmployeeTableProp
             </thead>
             <tbody>
               {employees.map((employee) => (
-                <tr key={employee.id} className="border-b border-slate-700 hover:bg-slate-700/50 transition">
+                <tr key={employee._id} className="border-b border-slate-700 hover:bg-slate-700/50 transition">
                   <td className="py-3 px-4 text-slate-50 font-medium">{employee.name}</td>
                   <td className="py-3 px-4 text-slate-400">{employee.email}</td>
                   <td className="py-3 px-4 text-slate-400">{employee.department}</td>
@@ -45,7 +45,7 @@ export function EmployeeTable({ employees, onEdit, onDelete }: EmployeeTableProp
                         employee.status === "active" ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
                       }`}
                     >
-                      {employee.status}
+                      {employee.status ?? "active"}
                     </span>
                   </td>
                   <td className="py-3 px-4 text-right">
@@ -59,7 +59,7 @@ export function EmployeeTable({ employees, onEdit, onDelete }: EmployeeTableProp
                         <Edit2 className="w-4 h-4" />
                       </Button>
                       <Button
-                        onClick={() => onDelete?.(employee.id)}
+                        onClick={() => onDelete?.(employee._id)}
                         size="sm"
                         variant="ghost"
                         className="text-red-400 hover:text-red-300 hover:bg-slate-700"

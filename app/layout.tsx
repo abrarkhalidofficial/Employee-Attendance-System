@@ -2,6 +2,8 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
+import { ConvexClientProvider } from "@/components/providers/convex-provider"
+import { SessionProvider } from "@/components/providers/session-provider"
 import "./globals.css"
 
 const _geist = Geist({ subsets: ["latin"] })
@@ -38,8 +40,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`font-sans antialiased`}>
-        {children}
-        <Analytics />
+        <ConvexClientProvider>
+          <SessionProvider>
+            {children}
+            <Analytics />
+          </SessionProvider>
+        </ConvexClientProvider>
       </body>
     </html>
   )

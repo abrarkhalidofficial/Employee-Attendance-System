@@ -10,7 +10,13 @@ import { X, Plus } from "lucide-react"
 interface CreateEmployeeDialogProps {
   isOpen: boolean
   onClose: () => void
-  onCreate: (employee: { name: string; email: string; password: string; department: string; position: string }) => void
+  onCreate: (employee: {
+    name: string
+    email: string
+    password: string
+    department: string
+    position: string
+  }) => Promise<void> | void
 }
 
 const DEPARTMENTS = ["Engineering", "Product", "Sales", "Marketing", "HR", "Finance"]
@@ -34,12 +40,12 @@ export function CreateEmployeeDialog({ isOpen, onClose, onCreate }: CreateEmploy
   })
 
   const [error, setError] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
 
-    // Validation
     if (!formData.name.trim()) {
       setError("Name is required")
       return
@@ -57,23 +63,28 @@ export function CreateEmployeeDialog({ isOpen, onClose, onCreate }: CreateEmploy
       return
     }
 
-    onCreate({
-      name: formData.name,
-      email: formData.email,
-      password: formData.password,
-      department: formData.department,
-      position: formData.position,
-    })
-
-    // Reset form
-    setFormData({
-      name: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-      department: "Engineering",
-      position: "Junior Developer",
-    })
+    setIsSubmitting(true)
+    try {
+      await onCreate({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        department: formData.department,
+        position: formData.position,
+      })
+      setFormData({
+        name: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+        department: "Engineering",
+        position: "Junior Developer",
+      })
+    } catch (createError) {
+      setError(createError instanceof Error ? createError.message : "Failed to create employee")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   if (!isOpen) return null
@@ -82,7 +93,6 @@ export function CreateEmployeeDialog({ isOpen, onClose, onCreate }: CreateEmploy
     <div className="fixed inset-0 bg-black/50 backdrop-blur z-50 flex items-center justify-center p-4">
       <Card className="border-slate-700 bg-slate-800 w-full max-w-md max-h-96 overflow-y-auto">
         <div className="p-6 space-y-4">
-          {/* Header */}
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-slate-50 flex items-center gap-2">
               <Plus className="w-5 h-5 text-blue-400" />
@@ -93,16 +103,13 @@ export function CreateEmployeeDialog({ isOpen, onClose, onCreate }: CreateEmploy
             </button>
           </div>
 
-          {/* Error Message */}
           {error && (
             <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
               <p className="text-sm text-red-400">{error}</p>
             </div>
           )}
 
-          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-3">
-            {/* Name */}
             <div>
               <label className="text-xs text-slate-400 mb-1 block">Full Name</label>
               <input
@@ -114,7 +121,6 @@ export function CreateEmployeeDialog({ isOpen, onClose, onCreate }: CreateEmploy
               />
             </div>
 
-            {/* Email */}
             <div>
               <label className="text-xs text-slate-400 mb-1 block">Email</label>
               <input
@@ -126,7 +132,6 @@ export function CreateEmployeeDialog({ isOpen, onClose, onCreate }: CreateEmploy
               />
             </div>
 
-            {/* Department */}
             <div>
               <label className="text-xs text-slate-400 mb-1 block">Department</label>
               <select
@@ -142,7 +147,6 @@ export function CreateEmployeeDialog({ isOpen, onClose, onCreate }: CreateEmploy
               </select>
             </div>
 
-            {/* Position */}
             <div>
               <label className="text-xs text-slate-400 mb-1 block">Position</label>
               <select
@@ -158,7 +162,6 @@ export function CreateEmployeeDialog({ isOpen, onClose, onCreate }: CreateEmploy
               </select>
             </div>
 
-            {/* Password */}
             <div>
               <label className="text-xs text-slate-400 mb-1 block">Password</label>
               <input
@@ -170,7 +173,6 @@ export function CreateEmployeeDialog({ isOpen, onClose, onCreate }: CreateEmploy
               />
             </div>
 
-            {/* Confirm Password */}
             <div>
               <label className="text-xs text-slate-400 mb-1 block">Confirm Password</label>
               <input
@@ -182,17 +184,17 @@ export function CreateEmployeeDialog({ isOpen, onClose, onCreate }: CreateEmploy
               />
             </div>
 
-            {/* Buttons */}
             <div className="flex gap-2 pt-2">
               <Button
+                type="button"
                 onClick={onClose}
                 variant="outline"
                 className="flex-1 border-slate-600 text-slate-50 hover:bg-slate-700 bg-transparent"
               >
                 Cancel
               </Button>
-              <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white">
-                Create Employee
+              <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white" disabled={isSubmitting}>
+                {isSubmitting ? "Creating..." : "Create Employee"}
               </Button>
             </div>
           </form>

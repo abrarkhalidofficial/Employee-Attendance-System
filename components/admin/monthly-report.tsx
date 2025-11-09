@@ -1,22 +1,28 @@
 "use client"
 
-import type { TimeLog, Employee } from "@/lib/mock-data"
+import type { EmployeeDoc, TimeLogDoc } from "@/lib/types"
 import { Card } from "@/components/ui/card"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 
 interface MonthlyReportProps {
-  timeLogs: TimeLog[]
-  employees: Employee[]
+  timeLogs: TimeLogDoc[]
+  employees: EmployeeDoc[]
 }
 
 export function MonthlyReport({ timeLogs, employees }: MonthlyReportProps) {
-  // Generate mock monthly data
-  const monthlyData = [
-    { week: "Week 1", hours: 156, employees: employees.length },
-    { week: "Week 2", hours: 164, employees: employees.length },
-    { week: "Week 3", hours: 152, employees: employees.length },
-    { week: "Week 4", hours: 168, employees: employees.length },
-  ]
+  const weeklyBuckets = timeLogs.reduce<Record<string, number>>((acc, log) => {
+    const date = new Date(log.date)
+    const weekNumber = `Week ${Math.min(4, Math.ceil(date.getDate() / 7))}`
+    acc[weekNumber] = (acc[weekNumber] ?? 0) + log.totalHours
+    return acc
+  }, {})
+
+  const weeks = ["Week 1", "Week 2", "Week 3", "Week 4"]
+  const monthlyData = weeks.map((label) => ({
+    week: label,
+    hours: Number((weeklyBuckets[label] ?? 0).toFixed(1)),
+    employees: employees.length,
+  }))
 
   return (
     <Card className="border-slate-700 bg-slate-800 p-6">

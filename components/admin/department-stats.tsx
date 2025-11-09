@@ -1,12 +1,12 @@
 "use client"
 
-import type { Employee, TimeLog } from "@/lib/mock-data"
+import type { EmployeeDoc, TimeLogDoc } from "@/lib/types"
 import { Card } from "@/components/ui/card"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 
 interface DepartmentStatsProps {
-  employees: Employee[]
-  timeLogs: TimeLog[]
+  employees: EmployeeDoc[]
+  timeLogs: TimeLogDoc[]
 }
 
 export function DepartmentStats({ employees, timeLogs }: DepartmentStatsProps) {
@@ -14,14 +14,14 @@ export function DepartmentStats({ employees, timeLogs }: DepartmentStatsProps) {
 
   const departmentData = departments.map((dept) => {
     const deptEmployees = employees.filter((e) => e.department === dept)
-    const deptLogs = timeLogs.filter((log) => deptEmployees.some((emp) => emp.id === log.employeeId))
+    const deptLogs = timeLogs.filter((log) => deptEmployees.some((emp) => emp._id === log.employeeId))
     const avgHours =
-      deptLogs.length > 0 ? (deptLogs.reduce((sum, log) => sum + log.totalHours, 0) / deptLogs.length).toFixed(1) : 0
+      deptLogs.length > 0 ? deptLogs.reduce((sum, log) => sum + log.totalHours, 0) / deptLogs.length : 0
 
     return {
       name: dept,
       employees: deptEmployees.length,
-      avgHours: Number.parseFloat(avgHours as string),
+      avgHours: Number(avgHours.toFixed(1)),
     }
   })
 

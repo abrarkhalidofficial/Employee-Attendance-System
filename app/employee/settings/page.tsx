@@ -1,15 +1,31 @@
 "use client"
 
+import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { SettingsForm } from "@/components/common/settings-form"
-import { mockEmployees } from "@/lib/mock-data"
 import { ArrowLeft, LogOut } from "lucide-react"
+import { useSession } from "@/components/providers/session-provider"
 
 export default function EmployeeSettingsPage() {
   const router = useRouter()
-  const currentEmployee = mockEmployees[0]
+  const { user, hydrated, clearUser } = useSession()
+
+  useEffect(() => {
+    if (!hydrated) return
+    if (!user || user.role !== "employee") {
+      router.replace("/")
+    }
+  }, [hydrated, router, user])
+
+  if (!hydrated || !user || user.role !== "employee") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-900 text-slate-400">
+        Loading settings...
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -34,20 +50,20 @@ export default function EmployeeSettingsPage() {
           <div className="space-y-4">
             <div>
               <p className="text-xs text-slate-400 mb-1">Name</p>
-              <p className="text-lg font-medium text-slate-50">{currentEmployee.name}</p>
+              <p className="text-lg font-medium text-slate-50">{user.name}</p>
             </div>
             <div>
               <p className="text-xs text-slate-400 mb-1">Department</p>
-              <p className="text-lg font-medium text-slate-50">{currentEmployee.department}</p>
+              <p className="text-lg font-medium text-slate-50">{user.department ?? "—"}</p>
             </div>
             <div>
               <p className="text-xs text-slate-400 mb-1">Position</p>
-              <p className="text-lg font-medium text-slate-50">{currentEmployee.position}</p>
+              <p className="text-lg font-medium text-slate-50">{user.position ?? "—"}</p>
             </div>
             <div>
               <p className="text-xs text-slate-400 mb-1">Join Date</p>
               <p className="text-lg font-medium text-slate-50">
-                {new Date(currentEmployee.joinDate).toLocaleDateString()}
+                {user.joinDate ? new Date(user.joinDate).toLocaleDateString() : "—"}
               </p>
             </div>
           </div>
@@ -57,7 +73,13 @@ export default function EmployeeSettingsPage() {
         <SettingsForm userType="employee" />
 
         {/* Logout Button */}
-        <Button onClick={() => router.push("/")} className="w-full bg-red-600 hover:bg-red-700 text-white">
+        <Button
+          onClick={() => {
+            clearUser()
+            router.push("/")
+          }}
+          className="w-full bg-red-600 hover:bg-red-700 text-white"
+        >
           <LogOut className="w-4 h-4 mr-2" />
           Logout
         </Button>

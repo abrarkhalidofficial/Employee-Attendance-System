@@ -1,7 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
+import { useMutation, useQuery } from "convex/react"
+import { api } from "@/convex/_generated/api"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { EmployeeTable } from "@/components/admin/employee-table"
@@ -9,49 +11,78 @@ import { LeaveRequestsCard } from "@/components/admin/leave-requests-card"
 import { AttendanceOverview } from "@/components/admin/attendance-overview"
 import { CreateEmployeeDialog } from "@/components/admin/create-employee-dialog"
 import { WorkOverview } from "@/components/admin/work-overview"
-import { mockEmployees, mockTimeLogs, mockLeaveRequests, mockWorkLogs } from "@/lib/mock-data"
-import type { Employee } from "@/lib/mock-data"
 import { LogOut, Users, Calendar, Clock, BarChart3, Settings, Plus } from "lucide-react"
+import { useSession } from "@/components/providers/session-provider"
+import type { LeaveRequestId } from "@/lib/types"
 
 export default function AdminDashboard() {
   const router = useRouter()
-  const [employees, setEmployees] = useState(mockEmployees)
-  const [leaveRequests] = useState(mockLeaveRequests)
-  const [timeLogs] = useState(mockTimeLogs)
+  const { user, hydrated, clearUser } = useSession()
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
-  const [workLogs] = useState(mockWorkLogs)
+  const createEmployee = useMutation(api.users.createEmployee)
+  const updateLeaveStatus = useMutation(api.leaveRequests.updateStatus)
 
-  const stats = {
-    totalEmployees: employees.length,
-    presentToday: timeLogs.filter((log) => new Date(log.date).toDateString() === new Date().toDateString()).length,
-    pendingRequests: leaveRequests.filter((r) => r.status === "pending").length,
-    avgHoursPerDay:
-      timeLogs.length > 0 ? (timeLogs.reduce((sum, log) => sum + log.totalHours, 0) / timeLogs.length).toFixed(1) : "0",
-  }
+  const employees = useQuery(api.users.listEmployees) ?? []
+  const leaveRequests = useQuery(api.leaveRequests.listAll) ?? []
+  const timeLogs = useQuery(api.timeLogs.listRecent, { limit: 200 }) ?? []
+  const workLogs = useQuery(api.workLogs.listRecent, { limit: 100 }) ?? []
 
-  const handleCreateEmployee = (newEmployeeData: {
+  useEffect(() => {
+    if (!hydrated) return
+    if (!user || user.role !== "admin") {
+      router.replace("/")
+    }
+  }, [hydrated, router, user])
+
+  const stats = useMemo(() => {
+    const today = new Date().toISOString().split("T")[0]
+    const presentToday = timeLogs.filter((log) => log.date === today).length
+    const pendingRequests = leaveRequests.filter((r) => r.status === "pending").length
+    const avgHours =
+      timeLogs.length > 0 ? (timeLogs.reduce((sum, log) => sum + log.totalHours, 0) / timeLogs.length).toFixed(1) : "0"
+
+    return {
+      totalEmployees: employees.length,
+      presentToday,
+      pendingRequests,
+      avgHoursPerDay: avgHours,
+    }
+  }, [employees, leaveRequests, timeLogs])
+
+  const handleCreateEmployee = async (newEmployeeData: {
     name: string
     email: string
     password: string
     department: string
     position: string
   }) => {
-    const newEmployee: Employee = {
-      id: `emp_${String(employees.length + 1).padStart(3, "0")}`,
-      name: newEmployeeData.name,
-      email: newEmployeeData.email,
-      department: newEmployeeData.department,
-      position: newEmployeeData.position,
-      joinDate: new Date().toISOString().split("T")[0],
-      status: "active",
-    }
-    setEmployees([...employees, newEmployee])
+    await createEmployee(newEmployeeData)
     setIsCreateDialogOpen(false)
+  }
+
+  const handleApprove = async (id: LeaveRequestId) => {
+    await updateLeaveStatus({ id, status: "approved" })
+  }
+
+  const handleReject = async (id: LeaveRequestId) => {
+    await updateLeaveStatus({ id, status: "rejected" })
+  }
+
+  const handleSignOut = () => {
+    clearUser()
+    router.push("/")
+  }
+
+  if (!hydrated || !user || user.role !== "admin") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-900 text-slate-400">
+        Loading dashboard...
+      </div>
+    )
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      {/* Header */}
       <header className="border-b border-slate-700 bg-slate-800/50 backdrop-blur sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div>
@@ -79,21 +110,15 @@ export default function AdminDashboard() {
               <Settings className="w-4 h-4 mr-2" />
               Settings
             </Button>
-            <Button
-              onClick={() => router.push("/")}
-              variant="outline"
-              className="border-slate-600 text-slate-50 hover:bg-slate-700"
-            >
+            <Button onClick={handleSignOut} variant="outline" className="border-slate-600 text-slate-50 hover:bg-slate-700">
               <LogOut className="w-4 h-4 mr-2" />
-              Back
+              Sign out
             </Button>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8 space-y-8">
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="border-slate-700 bg-slate-800 p-6">
             <div className="flex items-center gap-3">
@@ -136,23 +161,24 @@ export default function AdminDashboard() {
           </Card>
         </div>
 
-        {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Employee Management and Work Overview */}
           <div className="lg:col-span-2 space-y-6">
             <EmployeeTable employees={employees} />
             <WorkOverview workLogs={workLogs} employees={employees} />
             <AttendanceOverview timeLogs={timeLogs} employees={employees} />
           </div>
 
-          {/* Right Column - Leave Requests */}
           <div>
-            <LeaveRequestsCard requests={leaveRequests} employees={employees} />
+            <LeaveRequestsCard
+              requests={leaveRequests}
+              employees={employees}
+              onApprove={handleApprove}
+              onReject={handleReject}
+            />
           </div>
         </div>
       </main>
 
-      {/* Create Employee Dialog */}
       <CreateEmployeeDialog
         isOpen={isCreateDialogOpen}
         onClose={() => setIsCreateDialogOpen(false)}

@@ -1,17 +1,17 @@
 "use client"
 
-import type { WorkLog, Employee } from "@/lib/mock-data"
+import type { EmployeeDoc, WorkLogDoc } from "@/lib/types"
 import { Card } from "@/components/ui/card"
 import { Clock, User } from "lucide-react"
 
 interface WorkOverviewProps {
-  workLogs: WorkLog[]
-  employees: Employee[]
+  workLogs: WorkLogDoc[]
+  employees: EmployeeDoc[]
 }
 
 export function WorkOverview({ workLogs, employees }: WorkOverviewProps) {
   const getEmployeeInfo = (employeeId: string) => {
-    return employees.find((e) => e.id === employeeId)
+    return employees.find((e) => e._id === employeeId)
   }
 
   const totalTimeSpent = workLogs.reduce((sum, log) => sum + log.timeSpent, 0)
@@ -41,7 +41,7 @@ export function WorkOverview({ workLogs, employees }: WorkOverviewProps) {
 
               return (
                 <div
-                  key={log.id}
+                  key={log._id}
                   className="bg-slate-900 rounded-lg p-4 border border-slate-700 hover:border-slate-600 transition"
                 >
                   <div className="flex items-start justify-between gap-4">

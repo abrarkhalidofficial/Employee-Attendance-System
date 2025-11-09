@@ -1,11 +1,11 @@
 "use client"
 
 import { Card } from "@/components/ui/card"
-import type { TimeLog } from "@/lib/mock-data"
+import type { TimeLogDoc } from "@/lib/types"
 import { Calendar } from "lucide-react"
 
 interface TimeLogCardProps {
-  logs: TimeLog[]
+  logs: TimeLogDoc[]
 }
 
 export function TimeLogCard({ logs }: TimeLogCardProps) {
@@ -20,7 +20,7 @@ export function TimeLogCard({ logs }: TimeLogCardProps) {
         <div className="space-y-3">
           {logs.length > 0 ? (
             logs.map((log) => (
-              <div key={log.id} className="bg-slate-900 rounded-lg p-4 space-y-2">
+              <div key={log._id} className="bg-slate-900 rounded-lg p-4 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-slate-400">Check In</span>
                   <span className="font-mono text-slate-50">{log.checkIn}</span>

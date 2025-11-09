@@ -15,7 +15,7 @@ interface LeaveRequestFormProps {
     startDate: string
     endDate: string
     reason: string
-  }) => void
+  }) => Promise<void> | void
 }
 
 export function LeaveRequestForm({ onSubmit }: LeaveRequestFormProps) {
@@ -26,18 +26,29 @@ export function LeaveRequestForm({ onSubmit }: LeaveRequestFormProps) {
     reason: "",
   })
   const [submitted, setSubmitted] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState("")
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    onSubmit?.(formData)
-    setSubmitted(true)
-    setTimeout(() => setSubmitted(false), 3000)
-    setFormData({
-      type: "vacation",
-      startDate: "",
-      endDate: "",
-      reason: "",
-    })
+    setError("")
+    if (!onSubmit) return
+    setIsSubmitting(true)
+    try {
+      await onSubmit(formData)
+      setSubmitted(true)
+      setTimeout(() => setSubmitted(false), 3000)
+      setFormData({
+        type: "vacation",
+        startDate: "",
+        endDate: "",
+        reason: "",
+      })
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Failed to submit request")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -97,11 +108,14 @@ export function LeaveRequestForm({ onSubmit }: LeaveRequestFormProps) {
           />
         </div>
 
-        <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+        <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white" disabled={isSubmitting}>
           <FileText className="w-4 h-4 mr-2" />
-          Submit Request
+          {isSubmitting ? "Submitting..." : "Submit Request"}
         </Button>
 
+        {error && (
+          <div className="bg-red-500/20 border border-red-500 rounded-lg p-3 text-red-400 text-sm">{error}</div>
+        )}
         {submitted && (
           <div className="bg-green-500/20 border border-green-500 rounded-lg p-3 text-green-400 text-sm">
             Leave request submitted successfully!

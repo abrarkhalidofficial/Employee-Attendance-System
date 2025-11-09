@@ -1,15 +1,14 @@
 "use client"
 
-import type { LeaveRequest, Employee } from "@/lib/mock-data"
+import type { LeaveRequestDoc } from "@/lib/types"
 import { Card } from "@/components/ui/card"
 import { Clock, CheckCircle, XCircle } from "lucide-react"
 
 interface LeaveHistoryProps {
-  requests: LeaveRequest[]
-  employees: Employee[]
+  requests: LeaveRequestDoc[]
 }
 
-export function LeaveHistory({ requests, employees }: LeaveHistoryProps) {
+export function LeaveHistory({ requests }: LeaveHistoryProps) {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "approved":
@@ -39,7 +38,7 @@ export function LeaveHistory({ requests, employees }: LeaveHistoryProps) {
       <div className="space-y-3">
         {requests.length > 0 ? (
           requests.map((request) => (
-            <div key={request.id} className="bg-slate-900 rounded-lg p-4 flex items-start justify-between">
+            <div key={request._id} className="bg-slate-900 rounded-lg p-4 flex items-start justify-between">
               <div className="flex gap-3 flex-1">
                 <div className="mt-1">{getStatusIcon(request.status)}</div>
                 <div className="flex-1">

@@ -1,11 +1,11 @@
 "use client"
 
-import type { LeaveRequest } from "@/lib/mock-data"
+import type { LeaveRequestDoc } from "@/lib/types"
 import { Card } from "@/components/ui/card"
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts"
 
 interface LeaveAnalyticsProps {
-  requests: LeaveRequest[]
+  requests: LeaveRequestDoc[]
 }
 
 export function LeaveAnalytics({ requests }: LeaveAnalyticsProps) {

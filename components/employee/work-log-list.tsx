@@ -1,11 +1,11 @@
 "use client"
 
-import type { WorkLog } from "@/lib/mock-data"
+import type { WorkLogDoc } from "@/lib/types"
 import { Card } from "@/components/ui/card"
 import { Clock, Trash2 } from "lucide-react"
 
 interface WorkLogListProps {
-  logs: WorkLog[]
+  logs: WorkLogDoc[]
   onDelete?: (id: string) => void
 }
 
@@ -39,7 +39,7 @@ export function WorkLogList({ logs, onDelete }: WorkLogListProps) {
         <div className="space-y-3">
           {logs.length > 0 ? (
             logs.map((log) => (
-              <div key={log.id} className="bg-slate-900 rounded-lg p-4 space-y-2">
+              <div key={log._id} className="bg-slate-900 rounded-lg p-4 space-y-2">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1">
                     <p className="text-slate-50 text-sm">{log.taskDescription}</p>
@@ -51,7 +51,7 @@ export function WorkLogList({ logs, onDelete }: WorkLogListProps) {
                     </span>
                     {onDelete && (
                       <button
-                        onClick={() => onDelete(log.id)}
+                        onClick={() => onDelete(log._id)}
                         className="p-1 hover:bg-slate-800 rounded text-slate-400 hover:text-red-400 transition"
                         aria-label="Delete log"
                       >

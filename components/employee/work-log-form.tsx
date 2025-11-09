@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card"
 import { FileText, Plus } from "lucide-react"
 
 interface WorkLogFormProps {
-  onSubmit: (taskDescription: string, timeSpent: number) => void
+  onSubmit: (taskDescription: string, timeSpent: number) => Promise<void> | void
 }
 
 export function WorkLogForm({ onSubmit }: WorkLogFormProps) {
@@ -16,16 +16,17 @@ export function WorkLogForm({ onSubmit }: WorkLogFormProps) {
   const [timeSpent, setTimeSpent] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (taskDescription.trim() && timeSpent) {
-      setIsSubmitting(true)
-      setTimeout(() => {
-        onSubmit(taskDescription, Number.parseInt(timeSpent))
-        setTaskDescription("")
-        setTimeSpent("")
-        setIsSubmitting(false)
-      }, 300)
+    if (!taskDescription.trim() || !timeSpent) return
+
+    setIsSubmitting(true)
+    try {
+      await onSubmit(taskDescription, Number.parseInt(timeSpent))
+      setTaskDescription("")
+      setTimeSpent("")
+    } finally {
+      setIsSubmitting(false)
     }
   }
 

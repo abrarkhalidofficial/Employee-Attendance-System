@@ -1,26 +1,49 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
+import { useQuery } from "convex/react"
+import { api } from "@/convex/_generated/api"
 import { Card } from "@/components/ui/card"
 import { LeaveAnalytics } from "@/components/admin/leave-analytics"
 import { DepartmentStats } from "@/components/admin/department-stats"
 import { MonthlyReport } from "@/components/admin/monthly-report"
-import { mockEmployees, mockTimeLogs, mockLeaveRequests } from "@/lib/mock-data"
 import { ArrowLeft, TrendingUp } from "lucide-react"
+import { useSession } from "@/components/providers/session-provider"
 
 export default function AnalyticsPage() {
   const router = useRouter()
-  const [employees] = useState(mockEmployees)
-  const [timeLogs] = useState(mockTimeLogs)
-  const [leaveRequests] = useState(mockLeaveRequests)
+  const { user, hydrated } = useSession()
+  const employees = useQuery(api.users.listEmployees) ?? []
+  const timeLogs = useQuery(api.timeLogs.listRecent, { limit: 200 }) ?? []
+  const leaveRequests = useQuery(api.leaveRequests.listAll) ?? []
 
-  const stats = {
-    totalHoursWorked: timeLogs.reduce((sum, log) => sum + log.totalHours, 0).toFixed(1),
-    leaveRequestsProcessed: leaveRequests.filter((r) => r.status !== "pending").length,
-    approvalRate: ((leaveRequests.filter((r) => r.status === "approved").length / leaveRequests.length) * 100).toFixed(
-      0,
-    ),
+  useEffect(() => {
+    if (!hydrated) return
+    if (!user || user.role !== "admin") {
+      router.replace("/")
+    }
+  }, [hydrated, router, user])
+
+  const stats = useMemo(() => {
+    const totalHoursWorked = timeLogs.reduce((sum, log) => sum + log.totalHours, 0)
+    const processed = leaveRequests.filter((r) => r.status !== "pending").length
+    const approved = leaveRequests.filter((r) => r.status === "approved").length
+    const approvalRate = leaveRequests.length > 0 ? Math.round((approved / leaveRequests.length) * 100) : 0
+
+    return {
+      totalHoursWorked: totalHoursWorked.toFixed(1),
+      leaveRequestsProcessed: processed,
+      approvalRate,
+    }
+  }, [leaveRequests, timeLogs])
+
+  if (!hydrated || !user || user.role !== "admin") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-900 text-slate-400">
+        Loading analytics...
+      </div>
+    )
   }
 
   return (
