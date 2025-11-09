@@ -21,6 +21,7 @@ import type * as lib_errors from "../lib/errors.js";
 import type * as lib_rbac from "../lib/rbac.js";
 import type * as lib_time from "../lib/time.js";
 import type * as status from "../status.js";
+import type * as workingHours from "../workingHours.js";
 
 import type {
   ApiFromModules,
@@ -50,6 +51,7 @@ declare const fullApi: ApiFromModules<{
   "lib/rbac": typeof lib_rbac;
   "lib/time": typeof lib_time;
   status: typeof status;
+  workingHours: typeof workingHours;
 }>;
 declare const fullApiWithMounts: typeof fullApi;
 

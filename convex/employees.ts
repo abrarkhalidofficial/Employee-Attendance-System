@@ -254,3 +254,48 @@ async function fetchEmployees(ctx: QueryCtx, args: ListArgs) {
     })
   );
 }
+
+// Update employee status (for break/task tracking)
+export const updateEmployeeStatus = mutation({
+  args: {
+    employeeId: v.id("employees"),
+    status: v.union(v.literal("break"), v.literal("task")),
+    reason: v.string(),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const { employeeId, status, reason, userId } = args;
+    const timestamp = now();
+
+    // Verify employee exists
+    const employee = await ctx.db.get(employeeId);
+    if (!employee) {
+      throwError({ code: "NOT_FOUND", message: "Employee not found." });
+    }
+
+    // Create a status session entry
+    const sessionId = await ctx.db.insert("statusSessions", {
+      employeeId,
+      statusType: status === "break" ? "BREAK" : "TASK",
+      reason,
+      startedAt: timestamp,
+      createdBy: userId,
+    });
+
+    // Log the activity
+    await recordAudit(ctx, {
+      actorUserId: userId,
+      entityType: "status",
+      entityId: sessionId,
+      action: "CREATE",
+      after: {
+        employeeId,
+        statusType: status,
+        reason,
+        startedAt: timestamp,
+      },
+    });
+
+    return sessionId;
+  },
+});

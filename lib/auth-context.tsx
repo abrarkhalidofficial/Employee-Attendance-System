@@ -4,24 +4,30 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import { cookieUtils } from "./cookies";
 
 interface User {
   _id: Id<"users">;
   email: string;
   name: string;
   role: "admin" | "employee";
-  status: "active" | "inactive";
+  isActive: boolean;
 }
 
 interface Employee {
   _id: Id<"employees">;
   userId: Id<"users">;
-  name: string;
-  email: string;
-  department: string;
-  position: string;
-  status: "active" | "inactive";
-  currentStatus: "working" | "break" | "task" | "offline";
+  firstName: string;
+  lastName: string;
+  email?: string;
+  phone?: string;
+  departmentId?: Id<"departments">;
+  managerId?: Id<"employees">;
+  isActive: boolean;
+  hireDate: string;
+  position?: string;
+  salary?: number;
+  _creationTime: number;
 }
 
 interface AuthContextType {
@@ -62,14 +68,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   useEffect(() => {
-    // Check for stored user in localStorage
-    const storedUser = localStorage.getItem("currentUser");
+    // Check for stored user in cookies
+    const storedUser = cookieUtils.get("currentUser");
     if (storedUser) {
       try {
-        setUser(JSON.parse(storedUser));
+        const userData = JSON.parse(storedUser);
+        setUser(userData);
       } catch (error) {
         console.error("Failed to parse stored user:", error);
-        localStorage.removeItem("currentUser");
+        cookieUtils.remove("currentUser");
       }
     }
     setIsLoading(false);
@@ -84,8 +91,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Handle sign in data
   useEffect(() => {
     if (signInData) {
-      setUser(signInData as User);
-      localStorage.setItem("currentUser", JSON.stringify(signInData));
+      // Map backend role (ADMIN/EMPLOYEE) to frontend role (admin/employee)
+      const userData = {
+        ...signInData,
+        role: signInData.role === "ADMIN" ? "admin" : "employee",
+      } as User;
+
+      setUser(userData);
+      // Store user data in cookie (expires in 7 days)
+      cookieUtils.set("currentUser", JSON.stringify(userData), 7);
       setAuthCredentials(null); // Clear credentials after successful sign in
       setIsLoading(false);
     }
@@ -123,7 +137,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = () => {
     setUser(null);
     setEmployee(null);
-    localStorage.removeItem("currentUser");
+    // Remove user data from cookies
+    cookieUtils.remove("currentUser");
+    // Clear auth credentials
+    setAuthCredentials(null);
   };
 
   return (

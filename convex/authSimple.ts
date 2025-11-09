@@ -68,11 +68,13 @@ export const signInQuery = query({
     if (user.passwordHash !== hashedPassword) {
       throw new Error("Invalid password. Please try again.");
     }
+
+    // Return user data with role (ADMIN/EMPLOYEE format from database)
     return {
       _id: user._id,
       email: user.email,
       name: user.displayName ?? "",
-      role: user.role,
+      role: user.role, // Returns "ADMIN" or "EMPLOYEE"
       isActive: user.isActive,
     };
   },
