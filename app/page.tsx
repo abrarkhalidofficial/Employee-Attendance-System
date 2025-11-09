@@ -1,214 +1,122 @@
-"use client";
+"use client"
 
-import type React from "react";
+import type React from "react"
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/auth-context";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { mockAdminUser } from "@/lib/mock-data"
+import { LogIn, Lock } from "lucide-react"
 
-export default function AuthPage() {
-  const router = useRouter();
-  const { user, isLoading: authLoading, signIn, signUp } = useAuth();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [role, setRole] = useState<"admin" | "employee">("employee");
-  const [error, setError] = useState("");
+export default function Home() {
+  const router = useRouter()
+  const [showAdminLogin, setShowAdminLogin] = useState(false)
+  const [adminEmail, setAdminEmail] = useState("")
+  const [adminPassword, setAdminPassword] = useState("")
+  const [loginError, setLoginError] = useState("")
 
-  // Redirect logged-in users to their dashboard
-  useEffect(() => {
-    if (!authLoading && user) {
-      const targetPath =
-        user.role === "admin" ? "/admin/dashboard" : "/employee/dashboard";
-      router.push(targetPath);
+  const handleAdminLogin = (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoginError("")
+
+    if (adminEmail === mockAdminUser.email && adminPassword === mockAdminUser.password) {
+      router.push("/admin/dashboard")
+    } else {
+      setLoginError("Invalid email or password")
     }
-  }, [user, authLoading, router]);
+  }
 
-  // Show loading state while checking auth
-  if (authLoading) {
+  if (showAdminLogin) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-background to-muted flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+        <Card className="border-slate-700 bg-slate-800 w-full max-w-md p-8 space-y-6">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-slate-50 flex items-center justify-center gap-2 mb-2">
+              <Lock className="w-8 h-8 text-blue-400" />
+              Admin Login
+            </h1>
+            <p className="text-slate-400">Access the admin dashboard</p>
+          </div>
+
+          {loginError && (
+            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+              <p className="text-sm text-red-400">{loginError}</p>
+            </div>
+          )}
+
+          <form onSubmit={handleAdminLogin} className="space-y-4">
+            <div>
+              <label className="text-xs text-slate-400 mb-1 block">Email</label>
+              <input
+                type="email"
+                value={adminEmail}
+                onChange={(e) => setAdminEmail(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-slate-50 focus:outline-none focus:border-blue-500"
+                placeholder="admin@gmail.com"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-slate-400 mb-1 block">Password</label>
+              <input
+                type="password"
+                value={adminPassword}
+                onChange={(e) => setAdminPassword(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-slate-50 focus:outline-none focus:border-blue-500"
+                placeholder="••••••••"
+              />
+            </div>
+            <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+              <LogIn className="w-4 h-4 mr-2" />
+              Login
+            </Button>
+          </form>
+
+          <button
+            onClick={() => {
+              setShowAdminLogin(false)
+              setAdminEmail("")
+              setAdminPassword("")
+              setLoginError("")
+            }}
+            className="w-full text-sm text-slate-400 hover:text-slate-300 transition"
+          >
+            Back to Role Selection
+          </button>
+        </Card>
       </div>
-    );
+    )
   }
-
-  // Don't render auth form if user is logged in (will redirect)
-  if (user) {
-    return null;
-  }
-
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setError("");
-
-    try {
-      await signUp(email, name, password, role);
-      // The useEffect will handle the redirect once user state is updated
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Sign up failed");
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setError("");
-
-    try {
-      await signIn(email, password);
-      // The useEffect will handle the redirect once user state is updated
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Sign in failed");
-      setIsSubmitting(false);
-    }
-  };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-background to-muted flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader className="space-y-2 text-center">
-          <CardTitle className="text-3xl font-bold">
-            Attendance System
-          </CardTitle>
-          <CardDescription>
-            Manage attendance, leaves, and productivity
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="signin">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
-            </TabsList>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md border-slate-700 bg-slate-800">
+        <div className="p-8 space-y-6">
+          <div className="text-center space-y-2">
+            <h1 className="text-3xl font-bold text-slate-50">TimeTrack</h1>
+            <p className="text-slate-400">Employee Time & Leave Management</p>
+          </div>
 
-            <TabsContent value="signin" className="space-y-4">
-              <form onSubmit={handleSignIn} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signin-email">Email</Label>
-                  <Input
-                    id="signin-email"
-                    type="email"
-                    placeholder="your@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    disabled={isSubmitting}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signin-password">Password</Label>
-                  <Input
-                    id="signin-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    disabled={isSubmitting}
-                  />
-                </div>
-                {error && <p className="text-destructive text-sm">{error}</p>}
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? "Signing in..." : "Sign In"}
-                </Button>
-              </form>
-            </TabsContent>
+          <div className="space-y-3">
+            <Button
+              onClick={() => router.push("/employee/dashboard")}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              Employee Dashboard
+            </Button>
+            <Button
+              onClick={() => setShowAdminLogin(true)}
+              variant="outline"
+              className="w-full border-slate-600 text-slate-50 hover:bg-slate-700"
+            >
+              <Lock className="w-4 h-4 mr-2" />
+              Admin Login
+            </Button>
+          </div>
 
-            <TabsContent value="signup" className="space-y-4">
-              <form onSubmit={handleSignUp} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-name">Full Name</Label>
-                  <Input
-                    id="signup-name"
-                    type="text"
-                    placeholder="John Doe"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                    disabled={isSubmitting}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    placeholder="your@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    disabled={isSubmitting}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    disabled={isSubmitting}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-role">Account Type</Label>
-                  <Select
-                    value={role}
-                    onValueChange={(value: any) => setRole(value)}
-                  >
-                    <SelectTrigger id="signup-role">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="employee">Employee</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                {error && <p className="text-destructive text-sm">{error}</p>}
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? "Signing up..." : "Sign Up"}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
+          <p className="text-xs text-slate-500 text-center">Demo version with mock data. Select a role to continue.</p>
+        </div>
       </Card>
     </div>
-  );
+  )
 }
