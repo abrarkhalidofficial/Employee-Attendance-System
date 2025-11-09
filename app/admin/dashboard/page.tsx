@@ -122,6 +122,22 @@ export default function AdminDashboard() {
               Analytics
             </Button>
             <Button
+              onClick={() => router.push("/admin/attendance")}
+              variant="outline"
+              className="border-slate-600 text-slate-50 hover:bg-slate-700"
+            >
+              <Calendar className="w-4 h-4 mr-2" />
+              Attendance
+            </Button>
+            <Button
+              onClick={() => router.push("/admin/regularization")}
+              variant="outline"
+              className="border-slate-600 text-slate-50 hover:bg-slate-700"
+            >
+              <Clock className="w-4 h-4 mr-2" />
+              Regularization
+            </Button>
+            <Button
               onClick={() => router.push("/admin/work-analytics")}
               variant="outline"
               className="border-slate-600 text-slate-50 hover:bg-slate-700"

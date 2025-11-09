@@ -8,8 +8,11 @@
  * @module
  */
 
+import type * as attendance from "../attendance.js";
 import type * as leaveRequests from "../leaveRequests.js";
 import type * as migrations from "../migrations.js";
+import type * as profile from "../profile.js";
+import type * as regularization from "../regularization.js";
 import type * as seed from "../seed.js";
 import type * as timeLogs from "../timeLogs.js";
 import type * as users from "../users.js";
@@ -31,8 +34,11 @@ import type {
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  attendance: typeof attendance;
   leaveRequests: typeof leaveRequests;
   migrations: typeof migrations;
+  profile: typeof profile;
+  regularization: typeof regularization;
   seed: typeof seed;
   timeLogs: typeof timeLogs;
   users: typeof users;
