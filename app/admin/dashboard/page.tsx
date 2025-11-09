@@ -1,84 +1,100 @@
-"use client"
+"use client";
 
-import { useEffect, useMemo, useState } from "react"
-import { useRouter } from "next/navigation"
-import { useMutation, useQuery } from "convex/react"
-import { api } from "@/convex/_generated/api"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { EmployeeTable } from "@/components/admin/employee-table"
-import { LeaveRequestsCard } from "@/components/admin/leave-requests-card"
-import { AttendanceOverview } from "@/components/admin/attendance-overview"
-import { CreateEmployeeDialog } from "@/components/admin/create-employee-dialog"
-import { WorkOverview } from "@/components/admin/work-overview"
-import { LogOut, Users, Calendar, Clock, BarChart3, Settings, Plus } from "lucide-react"
-import { useSession } from "@/components/providers/session-provider"
-import type { LeaveRequestId } from "@/lib/types"
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { EmployeeTable } from "@/components/admin/employee-table";
+import { LeaveRequestsCard } from "@/components/admin/leave-requests-card";
+import { AttendanceOverview } from "@/components/admin/attendance-overview";
+import { CreateEmployeeDialog } from "@/components/admin/create-employee-dialog";
+import { WorkOverview } from "@/components/admin/work-overview";
+import {
+  LogOut,
+  Users,
+  Calendar,
+  Clock,
+  BarChart3,
+  Settings,
+  Plus,
+  TrendingUp,
+} from "lucide-react";
+import { useSession } from "@/components/providers/session-provider";
+import type { LeaveRequestId } from "@/lib/types";
 
 export default function AdminDashboard() {
-  const router = useRouter()
-  const { user, hydrated, clearUser } = useSession()
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
-  const createEmployee = useMutation(api.users.createEmployee)
-  const updateLeaveStatus = useMutation(api.leaveRequests.updateStatus)
+  const router = useRouter();
+  const { user, hydrated, clearUser } = useSession();
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const createEmployee = useMutation(api.users.createEmployee);
+  const updateLeaveStatus = useMutation(api.leaveRequests.updateStatus);
 
-  const employees = useQuery(api.users.listEmployees) ?? []
-  const leaveRequests = useQuery(api.leaveRequests.listAll) ?? []
-  const timeLogs = useQuery(api.timeLogs.listRecent, { limit: 200 }) ?? []
-  const workLogs = useQuery(api.workLogs.listRecent, { limit: 100 }) ?? []
+  const employees = useQuery(api.users.listEmployees) ?? [];
+  const leaveRequests = useQuery(api.leaveRequests.listAll) ?? [];
+  const timeLogs = useQuery(api.timeLogs.listRecent, { limit: 200 }) ?? [];
+  const workLogs = useQuery(api.workLogs.listRecent, { limit: 100 }) ?? [];
 
   useEffect(() => {
-    if (!hydrated) return
+    if (!hydrated) return;
     if (!user || user.role !== "admin") {
-      router.replace("/")
+      router.replace("/");
     }
-  }, [hydrated, router, user])
+  }, [hydrated, router, user]);
 
   const stats = useMemo(() => {
-    const today = new Date().toISOString().split("T")[0]
-    const presentToday = timeLogs.filter((log) => log.date === today).length
-    const pendingRequests = leaveRequests.filter((r) => r.status === "pending").length
+    const today = new Date().toISOString().split("T")[0];
+    const presentToday = timeLogs.filter((log) => log.date === today).length;
+    const pendingRequests = leaveRequests.filter(
+      (r) => r.status === "pending"
+    ).length;
     const avgHours =
-      timeLogs.length > 0 ? (timeLogs.reduce((sum, log) => sum + log.totalHours, 0) / timeLogs.length).toFixed(1) : "0"
+      timeLogs.length > 0
+        ? (
+            timeLogs.reduce((sum, log) => sum + log.totalHours, 0) /
+            timeLogs.length
+          ).toFixed(1)
+        : "0";
 
     return {
       totalEmployees: employees.length,
       presentToday,
       pendingRequests,
       avgHoursPerDay: avgHours,
-    }
-  }, [employees, leaveRequests, timeLogs])
+    };
+  }, [employees, leaveRequests, timeLogs]);
 
   const handleCreateEmployee = async (newEmployeeData: {
-    name: string
-    email: string
-    password: string
-    department: string
-    position: string
+    name: string;
+    email: string;
+    password: string;
+    department: string;
+    position: string;
   }) => {
-    await createEmployee(newEmployeeData)
-    setIsCreateDialogOpen(false)
-  }
+    await createEmployee(newEmployeeData);
+    setIsCreateDialogOpen(false);
+  };
 
   const handleApprove = async (id: LeaveRequestId) => {
-    await updateLeaveStatus({ id, status: "approved" })
-  }
+    await updateLeaveStatus({ id, status: "approved" });
+  };
 
   const handleReject = async (id: LeaveRequestId) => {
-    await updateLeaveStatus({ id, status: "rejected" })
-  }
+    await updateLeaveStatus({ id, status: "rejected" });
+  };
 
   const handleSignOut = () => {
-    clearUser()
-    router.push("/")
-  }
+    clearUser();
+    router.push("/");
+  };
 
   if (!hydrated || !user || user.role !== "admin") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-900 text-slate-400">
         Loading dashboard...
       </div>
-    )
+    );
   }
 
   return (
@@ -90,7 +106,10 @@ export default function AdminDashboard() {
             <p className="text-sm text-slate-400">Admin Dashboard</p>
           </div>
           <div className="flex gap-2">
-            <Button onClick={() => setIsCreateDialogOpen(true)} className="bg-green-600 hover:bg-green-700 text-white">
+            <Button
+              onClick={() => setIsCreateDialogOpen(true)}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
               <Plus className="w-4 h-4 mr-2" />
               Create Employee
             </Button>
@@ -103,6 +122,14 @@ export default function AdminDashboard() {
               Analytics
             </Button>
             <Button
+              onClick={() => router.push("/admin/work-analytics")}
+              variant="outline"
+              className="border-slate-600 text-slate-50 hover:bg-slate-700"
+            >
+              <TrendingUp className="w-4 h-4 mr-2" />
+              Work Logs
+            </Button>
+            <Button
               onClick={() => router.push("/admin/settings")}
               variant="outline"
               className="border-slate-600 text-slate-50 hover:bg-slate-700"
@@ -110,7 +137,11 @@ export default function AdminDashboard() {
               <Settings className="w-4 h-4 mr-2" />
               Settings
             </Button>
-            <Button onClick={handleSignOut} variant="outline" className="border-slate-600 text-slate-50 hover:bg-slate-700">
+            <Button
+              onClick={handleSignOut}
+              variant="outline"
+              className="border-slate-600 text-slate-50 hover:bg-slate-700"
+            >
               <LogOut className="w-4 h-4 mr-2" />
               Sign out
             </Button>
@@ -125,7 +156,9 @@ export default function AdminDashboard() {
               <Users className="w-8 h-8 text-blue-400" />
               <div>
                 <p className="text-xs text-slate-400">Total Employees</p>
-                <p className="text-2xl font-bold text-slate-50">{stats.totalEmployees}</p>
+                <p className="text-2xl font-bold text-slate-50">
+                  {stats.totalEmployees}
+                </p>
               </div>
             </div>
           </Card>
@@ -135,7 +168,9 @@ export default function AdminDashboard() {
               <Clock className="w-8 h-8 text-green-400" />
               <div>
                 <p className="text-xs text-slate-400">Present Today</p>
-                <p className="text-2xl font-bold text-slate-50">{stats.presentToday}</p>
+                <p className="text-2xl font-bold text-slate-50">
+                  {stats.presentToday}
+                </p>
               </div>
             </div>
           </Card>
@@ -145,7 +180,9 @@ export default function AdminDashboard() {
               <Calendar className="w-8 h-8 text-amber-400" />
               <div>
                 <p className="text-xs text-slate-400">Pending Requests</p>
-                <p className="text-2xl font-bold text-slate-50">{stats.pendingRequests}</p>
+                <p className="text-2xl font-bold text-slate-50">
+                  {stats.pendingRequests}
+                </p>
               </div>
             </div>
           </Card>
@@ -155,7 +192,9 @@ export default function AdminDashboard() {
               <Clock className="w-8 h-8 text-purple-400" />
               <div>
                 <p className="text-xs text-slate-400">Avg Hours/Day</p>
-                <p className="text-2xl font-bold text-slate-50">{stats.avgHoursPerDay}h</p>
+                <p className="text-2xl font-bold text-slate-50">
+                  {stats.avgHoursPerDay}h
+                </p>
               </div>
             </div>
           </Card>
@@ -185,5 +224,5 @@ export default function AdminDashboard() {
         onCreate={handleCreateEmployee}
       />
     </div>
-  )
+  );
 }
