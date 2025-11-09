@@ -1,259 +1,142 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
-import { useQuery, useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
-import { useAuth } from "@/lib/auth-context";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { DashboardHeader } from "@/components/dashboard-header";
+import { useEffect, useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
+import { useMutation, useQuery } from "convex/react"
+import { api } from "@/convex/_generated/api"
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { WorkTimer } from "@/components/employee/work-timer"
+import { BreakTimer } from "@/components/employee/break-timer"
+import { TimeLogCard } from "@/components/employee/time-log-card"
+import { WorkLogForm } from "@/components/employee/work-log-form"
+import { WorkLogList } from "@/components/employee/work-log-list"
+import { LogOut, Menu } from "lucide-react"
+import { useSession } from "@/components/providers/session-provider"
+import type { WorkLogDoc } from "@/lib/types"
+import type { Id } from "@/convex/_generated/dataModel"
 
 export default function EmployeeDashboard() {
-  const { user, employee } = useAuth();
-  const [elapsedTime, setElapsedTime] = useState(0);
-  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
-  const [statusReason, setStatusReason] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState<"break" | "task">(
-    "break"
-  );
+  const router = useRouter()
+  const { user, hydrated, clearUser } = useSession()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const createWorkLog = useMutation(api.workLogs.create)
+  const deleteWorkLog = useMutation(api.workLogs.remove)
 
-  const todayHours = useQuery(api.workingHours.getTodayWorkingHours, {
-    employeeId: employee?._id,
-  });
-  const startWorkDay = useMutation(api.workingHours.startWorkDay);
-  const endWorkDay = useMutation(api.workingHours.endWorkDay);
-  const updateStatus = useMutation(api.employees.updateEmployeeStatus);
+  const workLogs = useQuery(api.workLogs.listForEmployee, user ? { employeeId: user._id } : undefined) ?? []
+  const timeLogs = useQuery(api.timeLogs.listForEmployee, user ? { employeeId: user._id } : undefined) ?? []
 
-  // Simulate elapsed time
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (todayHours?.startTime && !todayHours?.endTime) {
-        setElapsedTime((Date.now() - todayHours.startTime) / 1000);
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [todayHours]);
-
-  const handleStartWork = async () => {
-    if (!employee) return;
-    try {
-      await startWorkDay({ employeeId: employee._id });
-    } catch (error) {
-      console.error("Failed to start work day:", error);
+    if (!hydrated) return
+    if (!user || user.role !== "employee") {
+      router.replace("/")
     }
-  };
+  }, [hydrated, router, user])
 
-  const handleEndWork = async () => {
-    if (!employee) return;
-    try {
-      await endWorkDay({ employeeId: employee._id });
-    } catch (error) {
-      console.error("Failed to end work day:", error);
+  const handleAddWorkLog = async (taskDescription: string, timeSpent: number) => {
+    if (!user) return
+    await createWorkLog({
+      employeeId: user._id as Id<"users">,
+      taskDescription,
+      timeSpent,
+    })
+  }
+
+  const handleDeleteWorkLog = async (id: string) => {
+    if (!user) return
+    await deleteWorkLog({
+      id: id as Id<"workLogs">,
+      employeeId: user._id as Id<"users">,
+    })
+  }
+
+  const quickStats = useMemo(() => {
+    if (timeLogs.length === 0) {
+      return { hoursToday: 0, breakTime: 0, weeklyTotal: 0 }
     }
-  };
+    const hoursToday = timeLogs[0]?.totalHours ?? 0
+    const breakTime = timeLogs[0]?.breakTime ?? 0
+    const weeklyTotal = timeLogs.slice(0, 5).reduce((sum, log) => sum + log.totalHours, 0)
+    return { hoursToday, breakTime, weeklyTotal }
+  }, [timeLogs])
 
-  const handleStatusChange = async () => {
-    if (!employee || !user) return;
-    try {
-      await updateStatus({
-        employeeId: employee._id,
-        status: selectedStatus,
-        reason: statusReason,
-        userId: user._id,
-      });
-      setStatusDialogOpen(false);
-      setStatusReason("");
-    } catch (error) {
-      console.error("Failed to update status:", error);
-    }
-  };
+  const sortedWorkLogs: WorkLogDoc[] = [...workLogs].sort((a, b) => (a.insertedAt ?? 0) - (b.insertedAt ?? 0)).reverse()
 
-  const formatTime = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    return `${hours}h ${minutes}m`;
-  };
+  if (!hydrated || !user || user.role !== "employee") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-900 text-slate-400">
+        Loading dashboard...
+      </div>
+    )
+  }
+
+  const handleSignOut = () => {
+    clearUser()
+    router.push("/")
+  }
 
   return (
-    <div className="flex flex-col h-full">
-      <DashboardHeader
-        title="Employee Dashboard"
-        subtitle="Track your working hours and status"
-      />
-      <div className="flex-1 overflow-auto p-8 space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Working Hours Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Today's Working Hours</CardTitle>
-              <CardDescription>Record your daily working time</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="text-center space-y-2">
-                <p className="text-sm text-muted-foreground">Elapsed Time</p>
-                <p className="text-4xl font-bold text-primary">
-                  {formatTime(elapsedTime)}
-                </p>
-              </div>
-              <div className="flex gap-3">
-                <Button
-                  onClick={handleStartWork}
-                  disabled={
-                    todayHours?.startTime !== undefined && !todayHours?.endTime
-                  }
-                  className="flex-1"
-                >
-                  Start Work
-                </Button>
-                <Button
-                  onClick={handleEndWork}
-                  variant="outline"
-                  disabled={
-                    !todayHours?.startTime || todayHours?.endTime !== undefined
-                  }
-                  className="flex-1 bg-transparent"
-                >
-                  End Work
-                </Button>
-              </div>
-              {todayHours && (
-                <div className="text-sm text-muted-foreground space-y-1">
-                  {todayHours.startTime && (
-                    <p>
-                      Start:{" "}
-                      {new Date(todayHours.startTime).toLocaleTimeString()}
-                    </p>
-                  )}
-                  {todayHours.endTime && (
-                    <p>
-                      End: {new Date(todayHours.endTime).toLocaleTimeString()}
-                    </p>
-                  )}
-                  {todayHours.totalHours && (
-                    <p className="font-semibold text-foreground">
-                      Total: {todayHours.totalHours.toFixed(2)}h
-                    </p>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Status Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Current Status</CardTitle>
-              <CardDescription>Update your availability status</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Current Status</p>
-                <Badge className="text-base py-2 px-3">Working</Badge>
-              </div>
-              <Dialog
-                open={statusDialogOpen}
-                onOpenChange={setStatusDialogOpen}
-              >
-                <DialogTrigger asChild>
-                  <Button variant="outline" className="w-full bg-transparent">
-                    Update Status
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Update Your Status</DialogTitle>
-                    <DialogDescription>
-                      Let your team know your current availability
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>Status Type</Label>
-                      <div className="flex gap-2">
-                        <Button
-                          variant={
-                            selectedStatus === "break" ? "default" : "outline"
-                          }
-                          onClick={() => setSelectedStatus("break")}
-                        >
-                          On Break
-                        </Button>
-                        <Button
-                          variant={
-                            selectedStatus === "task" ? "default" : "outline"
-                          }
-                          onClick={() => setSelectedStatus("task")}
-                        >
-                          On Task
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="reason">Reason</Label>
-                      <Textarea
-                        id="reason"
-                        placeholder="Describe your status (e.g., lunch break, meeting)..."
-                        value={statusReason}
-                        onChange={(e) => setStatusReason(e.target.value)}
-                      />
-                    </div>
-                    <Button onClick={handleStatusChange} className="w-full">
-                      Update Status
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Quick Stats */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Weekly Overview</CardTitle>
-            <CardDescription>Your work summary this week</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 bg-muted rounded-lg">
-                <p className="text-sm text-muted-foreground">Total Hours</p>
-                <p className="text-2xl font-bold text-foreground">40h</p>
-              </div>
-              <div className="text-center p-4 bg-muted rounded-lg">
-                <p className="text-sm text-muted-foreground">Break Time</p>
-                <p className="text-2xl font-bold text-foreground">2h 30m</p>
-              </div>
-              <div className="text-center p-4 bg-muted rounded-lg">
-                <p className="text-sm text-muted-foreground">Tasks</p>
-                <p className="text-2xl font-bold text-foreground">5</p>
-              </div>
-              <div className="text-center p-4 bg-muted rounded-lg">
-                <p className="text-sm text-muted-foreground">Leaves</p>
-                <p className="text-2xl font-bold text-foreground">0</p>
-              </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <header className="border-b border-slate-700 bg-slate-800/50 backdrop-blur sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-50">TimeTrack</h1>
+            <p className="text-sm text-slate-400">Employee Dashboard</p>
+          </div>
+          <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden p-2 hover:bg-slate-700 rounded-lg">
+            <Menu className="w-5 h-5" />
+          </button>
+          <div className="hidden md:flex items-center gap-4">
+            <div className="text-right">
+              <p className="text-sm font-medium text-slate-50">{user.name}</p>
+              <p className="text-xs text-slate-400">{user.department}</p>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+            <Button onClick={handleSignOut} variant="outline" className="border-slate-600 text-slate-50 hover:bg-slate-700">
+              <LogOut className="w-4 h-4 mr-2" />
+              Sign out
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-2 space-y-6">
+            <WorkTimer />
+            <BreakTimer />
+            <WorkLogForm onSubmit={handleAddWorkLog} />
+            <WorkLogList logs={sortedWorkLogs} onDelete={handleDeleteWorkLog} />
+            <TimeLogCard logs={timeLogs} />
+          </div>
+
+          <div className="space-y-6">
+            <Card className="border-slate-700 bg-slate-800 p-6">
+              <h3 className="text-lg font-semibold text-slate-50 mb-4">Quick Stats</h3>
+              <div className="space-y-4">
+                <div className="bg-slate-900 rounded-lg p-4">
+                  <p className="text-xs text-slate-400 mb-1">Hours Today</p>
+                  <p className="text-3xl font-bold text-green-400">{quickStats.hoursToday.toFixed(1)}h</p>
+                </div>
+                <div className="bg-slate-900 rounded-lg p-4">
+                  <p className="text-xs text-slate-400 mb-1">Break Time</p>
+                  <p className="text-3xl font-bold text-amber-400">{quickStats.breakTime}m</p>
+                </div>
+                <div className="bg-slate-900 rounded-lg p-4">
+                  <p className="text-xs text-slate-400 mb-1">Weekly Total</p>
+                  <p className="text-3xl font-bold text-blue-400">{quickStats.weeklyTotal.toFixed(1)}h</p>
+                </div>
+              </div>
+            </Card>
+
+            <Button
+              onClick={() => router.push("/employee/leave-requests")}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              Request Leave
+            </Button>
+          </div>
+        </div>
+      </main>
     </div>
-  );
+  )
 }
