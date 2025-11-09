@@ -196,11 +196,7 @@ export default function CreateAdminPage() {
             </div>
 
             <div className="flex gap-4 pt-4">
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                className="flex-1"
-              >
+              <Button type="submit" disabled={isSubmitting} className="flex-1">
                 {isSubmitting ? "Creating..." : "Create Admin Account"}
               </Button>
               <Button
