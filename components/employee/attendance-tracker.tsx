@@ -13,6 +13,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
   Clock,
   MapPin,
   LogIn,
@@ -39,6 +49,8 @@ export function AttendanceTracker({ employeeId }: AttendanceTrackerProps) {
     longitude: number;
   } | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [showBreakDialog, setShowBreakDialog] = useState<boolean>(false);
+  const [breakReason, setBreakReason] = useState<string>("");
 
   const todayAttendance = useQuery(api.attendance.getTodayAttendance, {
     employeeId,
@@ -172,12 +184,23 @@ export function AttendanceTracker({ employeeId }: AttendanceTrackerProps) {
   };
 
   const handleStartBreak = async () => {
+    if (!breakReason.trim()) {
+      toast({
+        title: "❌ Break Reason Required",
+        description: "Please enter a reason for your break.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      await startBreak({ employeeId });
+      await startBreak({ employeeId, reason: breakReason });
       toast({
         title: "☕ Break Started",
         description: "Enjoy your break! Your working time is paused.",
       });
+      setShowBreakDialog(false);
+      setBreakReason("");
     } catch (error: any) {
       toast({
         title: "❌ Error",
@@ -185,6 +208,11 @@ export function AttendanceTracker({ employeeId }: AttendanceTrackerProps) {
         variant: "destructive",
       });
     }
+  };
+
+  const openBreakDialog = () => {
+    setBreakReason("");
+    setShowBreakDialog(true);
   };
 
   const handleEndBreak = async () => {
@@ -311,7 +339,7 @@ export function AttendanceTracker({ employeeId }: AttendanceTrackerProps) {
               {/* Break Controls */}
               {!todayAttendance?.isOnBreak ? (
                 <Button
-                  onClick={handleStartBreak}
+                  onClick={openBreakDialog}
                   variant="outline"
                   className="w-full"
                 >
@@ -331,6 +359,55 @@ export function AttendanceTracker({ employeeId }: AttendanceTrackerProps) {
           </CardContent>
         </Card>
       )}
+
+      {/* Break Reason Dialog */}
+      <Dialog open={showBreakDialog} onOpenChange={setShowBreakDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Coffee className="h-5 w-5 text-amber-600" />
+              Start Break
+            </DialogTitle>
+            <DialogDescription>
+              Please provide a reason for your break. This helps track break
+              patterns and activities.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="breakReason">Break Reason</Label>
+              <Input
+                id="breakReason"
+                placeholder="e.g., Lunch, Prayer, Coffee, Personal"
+                value={breakReason}
+                onChange={(e) => setBreakReason(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleStartBreak();
+                  }
+                }}
+                autoFocus
+              />
+              <p className="text-xs text-muted-foreground">
+                Common reasons: Lunch Break, Prayer Break, Coffee Break,
+                Restroom, Personal
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowBreakDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleStartBreak}
+              className="bg-amber-600 hover:bg-amber-700"
+            >
+              <Coffee className="mr-2 h-4 w-4" />
+              Start Break
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Check In/Out Card */}
       <Card>
