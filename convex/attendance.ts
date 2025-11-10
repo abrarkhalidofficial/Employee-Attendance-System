@@ -417,6 +417,7 @@ export const updateBreakTime = mutation({
 export const startBreak = mutation({
   args: {
     employeeId: v.id("users"),
+    reason: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const date = todayISO();
@@ -452,6 +453,7 @@ export const startBreak = mutation({
       startTime: time,
       endTime: undefined,
       duration: undefined,
+      reason: args.reason || "Break",
     });
 
     await ctx.db.patch(attendance._id, {
