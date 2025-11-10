@@ -11,6 +11,7 @@ import {
   Clock,
   Settings,
   LogOut,
+  ListTodo,
 } from "lucide-react";
 import { useSession } from "@/components/providers/session-provider";
 
@@ -28,6 +29,7 @@ export default function EmployeeLayout({
   const navItems = [
     { path: "/employee/dashboard", label: "Dashboard", icon: Home },
     { path: "/employee/attendance", label: "Attendance", icon: Calendar },
+    { path: "/employee/tasks", label: "Tasks", icon: ListTodo },
     { path: "/employee/leave-requests", label: "Leave", icon: FileText },
     { path: "/employee/regularization", label: "Regularization", icon: Clock },
     { path: "/employee/profile", label: "Profile", icon: User },

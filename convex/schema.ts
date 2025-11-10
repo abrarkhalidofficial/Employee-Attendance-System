@@ -163,4 +163,46 @@ export default defineSchema({
     .index("by_employee", ["employeeId"])
     .index("by_date", ["date"])
     .index("by_attendance", ["attendanceId"]),
+  tasks: defineTable({
+    title: v.string(),
+    description: v.string(),
+    assignedTo: v.id("users"), // employee to whom task is assigned
+    assignedBy: v.id("users"), // admin or employee who assigned the task
+    status: v.union(
+      v.literal("pending"),
+      v.literal("in-progress"),
+      v.literal("completed"),
+      v.literal("cancelled")
+    ),
+    priority: v.union(
+      v.literal("low"),
+      v.literal("medium"),
+      v.literal("high"),
+      v.literal("urgent")
+    ),
+    dueDate: v.optional(v.string()),
+    startDate: v.optional(v.string()),
+    completedAt: v.optional(v.number()),
+    estimatedHours: v.optional(v.number()),
+    actualHours: v.optional(v.number()),
+    tags: v.optional(v.array(v.string())),
+    attachments: v.optional(v.array(v.string())),
+    comments: v.optional(
+      v.array(
+        v.object({
+          userId: v.id("users"),
+          userName: v.string(),
+          comment: v.string(),
+          timestamp: v.number(),
+        })
+      )
+    ),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_assigned_to", ["assignedTo"])
+    .index("by_assigned_by", ["assignedBy"])
+    .index("by_status", ["status"])
+    .index("by_priority", ["priority"])
+    .index("by_due_date", ["dueDate"]),
 });

@@ -12,6 +12,7 @@ import {
   Settings,
   UserPlus,
   LogOut,
+  ListTodo,
 } from "lucide-react";
 import { useSession } from "@/components/providers/session-provider";
 
@@ -29,6 +30,7 @@ export default function AdminLayout({
   const navItems = [
     { path: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { path: "/admin/attendance", label: "Attendance", icon: Calendar },
+    { path: "/admin/tasks", label: "Tasks", icon: ListTodo },
     { path: "/admin/analytics", label: "Analytics", icon: BarChart3 },
     { path: "/admin/regularization", label: "Regularization", icon: Clock },
     { path: "/admin/work-analytics", label: "Work Logs", icon: TrendingUp },
