@@ -51,6 +51,7 @@ export default defineSchema({
           startTime: v.string(),
           endTime: v.optional(v.string()),
           duration: v.optional(v.number()), // minutes
+          reason: v.optional(v.string()), // reason for break
         })
       )
     ),
