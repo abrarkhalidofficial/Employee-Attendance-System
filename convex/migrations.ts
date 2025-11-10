@@ -66,6 +66,43 @@ export const migratePasswordHashes = mutation({
 });
 
 /**
+ * Migration to add break tracking and penalty fields to attendance records
+ */
+export const migrateAttendanceRecords = mutation({
+  handler: async (ctx) => {
+    const allAttendance = await ctx.db.query("attendance").collect();
+
+    let updatedCount = 0;
+
+    for (const record of allAttendance) {
+      const updates: any = {};
+
+      // Add missing fields with default values
+      if (record.isOnBreak === undefined) {
+        updates.isOnBreak = false;
+      }
+      if (record.breakPeriods === undefined) {
+        updates.breakPeriods = [];
+      }
+      if (record.workingHours === undefined) {
+        updates.workingHours = record.totalHours;
+      }
+      if (record.latePenalty === undefined && record.isLate) {
+        updates.latePenalty = 1;
+      }
+
+      // Only update if there are changes
+      if (Object.keys(updates).length > 0) {
+        await ctx.db.patch(record._id, updates);
+        updatedCount++;
+      }
+    }
+
+    return `Migration complete. Updated ${updatedCount} attendance record(s) with new break tracking and penalty fields.`;
+  },
+});
+
+/**
  * Clear all data from the database (use with caution!)
  */
 export const clearDatabase = mutation({

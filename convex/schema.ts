@@ -40,7 +40,22 @@ export default defineSchema({
     earlyBy: v.optional(v.number()), // minutes
     breakTime: v.number(),
     totalHours: v.number(),
+    workingHours: v.optional(v.number()), // actual working time excluding breaks
     overtimeHours: v.optional(v.number()),
+    // Break tracking
+    isOnBreak: v.optional(v.boolean()),
+    currentBreakStartTime: v.optional(v.string()),
+    breakPeriods: v.optional(
+      v.array(
+        v.object({
+          startTime: v.string(),
+          endTime: v.optional(v.string()),
+          duration: v.optional(v.number()), // minutes
+        })
+      )
+    ),
+    // Penalty tracking
+    latePenalty: v.optional(v.number()), // penalty points for being late
     location: v.optional(
       v.object({
         latitude: v.number(),
@@ -130,4 +145,21 @@ export default defineSchema({
     isDefault: v.boolean(),
     createdAt: v.number(),
   }),
+  penalties: defineTable({
+    employeeId: v.id("users"),
+    attendanceId: v.id("attendance"),
+    date: v.string(),
+    type: v.union(
+      v.literal("late-arrival"),
+      v.literal("early-departure"),
+      v.literal("absent"),
+      v.literal("half-day")
+    ),
+    points: v.number(),
+    description: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_employee", ["employeeId"])
+    .index("by_date", ["date"])
+    .index("by_attendance", ["attendanceId"]),
 });

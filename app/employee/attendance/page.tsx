@@ -40,6 +40,11 @@ export default function AttendancePage() {
     user ? { employeeId: user._id as Id<"users">, month: currentMonth } : "skip"
   );
 
+  const penaltyStats = useQuery(
+    api.attendance.getTotalPenaltyPoints,
+    user ? { employeeId: user._id as Id<"users">, month: currentMonth } : "skip"
+  );
+
   const formatHours = (hours: number) => {
     const h = Math.floor(hours);
     const m = Math.round((hours - h) * 60);
@@ -101,6 +106,41 @@ export default function AttendancePage() {
 
         {/* Right Column - Stats & History */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Penalty Warning */}
+          {penaltyStats && penaltyStats.totalPoints > 0 && (
+            <Card className="bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium flex items-center gap-2 text-red-700 dark:text-red-400">
+                  <AlertCircle className="h-4 w-4" />
+                  Penalty Points This Month
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-3xl font-bold text-red-700 dark:text-red-400">
+                      {penaltyStats.totalPoints}
+                    </div>
+                    <div className="text-xs text-red-600 dark:text-red-500 mt-1">
+                      {penaltyStats.count}{" "}
+                      {penaltyStats.count === 1 ? "penalty" : "penalties"}
+                    </div>
+                  </div>
+                  {penaltyStats.byType["late-arrival"] > 0 && (
+                    <div className="text-right">
+                      <div className="text-sm text-red-700 dark:text-red-400">
+                        Late Arrivals: {penaltyStats.byType["late-arrival"]}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className="text-xs text-muted-foreground mt-3 p-2 bg-background/50 rounded">
+                  💡 Tip: Arrive before 9:15 AM to avoid penalties
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Monthly Stats */}
           {monthlyReport && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

@@ -98,6 +98,7 @@ export const checkIn = mutation({
     );
 
     const now = Date.now();
+    let attendanceId;
 
     if (existing) {
       // Update existing record
@@ -106,13 +107,16 @@ export const checkIn = mutation({
         isLate: lateInfo.isLate,
         lateBy: lateInfo.lateBy,
         status: lateInfo.isLate ? "late" : "present",
+        latePenalty: lateInfo.isLate ? 1 : 0,
         location: args.location,
+        isOnBreak: false,
+        breakPeriods: [],
         updatedAt: now,
       });
-      return existing._id;
+      attendanceId = existing._id;
     } else {
       // Create new attendance record
-      return await ctx.db.insert("attendance", {
+      attendanceId = await ctx.db.insert("attendance", {
         employeeId: args.employeeId,
         date,
         checkIn: time,
@@ -120,16 +124,35 @@ export const checkIn = mutation({
         status: lateInfo.isLate ? "late" : "present",
         isLate: lateInfo.isLate,
         lateBy: lateInfo.lateBy,
+        latePenalty: lateInfo.isLate ? 1 : 0,
         isEarlyDeparture: false,
         earlyBy: undefined,
         breakTime: 0,
         totalHours: 0,
+        workingHours: 0,
         overtimeHours: undefined,
         location: args.location,
+        isOnBreak: false,
+        breakPeriods: [],
         createdAt: now,
         updatedAt: now,
       });
     }
+
+    // Create penalty record if late
+    if (lateInfo.isLate) {
+      await ctx.db.insert("penalties", {
+        employeeId: args.employeeId,
+        attendanceId,
+        date,
+        type: "late-arrival",
+        points: 1,
+        description: `Late by ${lateInfo.lateBy} minutes`,
+        createdAt: now,
+      });
+    }
+
+    return attendanceId;
   },
 });
 
@@ -162,6 +185,11 @@ export const checkOut = mutation({
       throw new ConvexError("Cannot check out without checking in first");
     }
 
+    // End any ongoing break
+    if (attendance.isOnBreak) {
+      throw new ConvexError("Please end your break before checking out");
+    }
+
     const shift = await getShiftSettings(ctx);
     const earlyInfo = calculateEarlyDeparture(time, shift.endTime);
 
@@ -171,22 +199,23 @@ export const checkOut = mutation({
 
     const checkInMinutes = checkInHour * 60 + checkInMin;
     const checkOutMinutes = checkOutHour * 60 + checkOutMin;
-    const workedMinutes = checkOutMinutes - checkInMinutes;
+    const totalMinutes = checkOutMinutes - checkInMinutes;
     const breakMinutes = args.breakTime || attendance.breakTime || 0;
-    const netMinutes = workedMinutes - breakMinutes;
-    const totalHours = netMinutes / 60;
+    const workingMinutes = totalMinutes - breakMinutes;
+    const totalHours = totalMinutes / 60;
+    const workingHours = workingMinutes / 60;
 
     // Calculate overtime
     const overtimeHours =
-      totalHours > shift.fullDayHours ? totalHours - shift.fullDayHours : 0;
+      workingHours > shift.fullDayHours ? workingHours - shift.fullDayHours : 0;
 
     // Determine status
     let status = attendance.status;
-    if (totalHours < shift.halfDayHours) {
+    if (workingHours < shift.halfDayHours) {
       status = "half-day";
     } else if (
-      totalHours >= shift.halfDayHours &&
-      totalHours < shift.fullDayHours
+      workingHours >= shift.halfDayHours &&
+      workingHours < shift.fullDayHours
     ) {
       status = attendance.isLate ? "late" : "present";
     } else {
@@ -197,10 +226,12 @@ export const checkOut = mutation({
       checkOut: time,
       breakTime: breakMinutes,
       totalHours,
+      workingHours,
       overtimeHours: overtimeHours > 0 ? overtimeHours : undefined,
       isEarlyDeparture: earlyInfo.isEarlyDeparture,
       earlyBy: earlyInfo.earlyBy,
       status,
+      isOnBreak: false,
       updatedAt: Date.now(),
     });
 
@@ -379,5 +410,171 @@ export const updateBreakTime = mutation({
       breakTime: args.breakTime,
       updatedAt: Date.now(),
     });
+  },
+});
+
+// Start break
+export const startBreak = mutation({
+  args: {
+    employeeId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const date = todayISO();
+    const time = getCurrentPakistanTime();
+
+    const attendance = await ctx.db
+      .query("attendance")
+      .withIndex("by_employee_and_date", (q) =>
+        q.eq("employeeId", args.employeeId).eq("date", date)
+      )
+      .first();
+
+    if (!attendance) {
+      throw new ConvexError(
+        "No attendance record found. Please check in first."
+      );
+    }
+
+    if (!attendance.checkIn) {
+      throw new ConvexError("Cannot start break without checking in first");
+    }
+
+    if (attendance.checkOut) {
+      throw new ConvexError("Cannot start break after checking out");
+    }
+
+    if (attendance.isOnBreak) {
+      throw new ConvexError("Break already in progress");
+    }
+
+    const breakPeriods = attendance.breakPeriods || [];
+    breakPeriods.push({
+      startTime: time,
+      endTime: undefined,
+      duration: undefined,
+    });
+
+    await ctx.db.patch(attendance._id, {
+      isOnBreak: true,
+      currentBreakStartTime: time,
+      breakPeriods,
+      updatedAt: Date.now(),
+    });
+
+    return attendance._id;
+  },
+});
+
+// End break
+export const endBreak = mutation({
+  args: {
+    employeeId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const date = todayISO();
+    const time = getCurrentPakistanTime();
+
+    const attendance = await ctx.db
+      .query("attendance")
+      .withIndex("by_employee_and_date", (q) =>
+        q.eq("employeeId", args.employeeId).eq("date", date)
+      )
+      .first();
+
+    if (!attendance) {
+      throw new ConvexError("No attendance record found");
+    }
+
+    if (!attendance.isOnBreak) {
+      throw new ConvexError("No break in progress");
+    }
+
+    if (!attendance.currentBreakStartTime) {
+      throw new ConvexError("Break start time not found");
+    }
+
+    // Calculate break duration
+    const [startHour, startMin] = attendance.currentBreakStartTime
+      .split(":")
+      .map(Number);
+    const [endHour, endMin] = time.split(":").map(Number);
+
+    const startMinutes = startHour * 60 + startMin;
+    const endMinutes = endHour * 60 + endMin;
+    const breakDuration = endMinutes - startMinutes;
+
+    // Update the last break period
+    const breakPeriods = attendance.breakPeriods || [];
+    if (breakPeriods.length > 0) {
+      breakPeriods[breakPeriods.length - 1] = {
+        ...breakPeriods[breakPeriods.length - 1],
+        endTime: time,
+        duration: breakDuration,
+      };
+    }
+
+    // Calculate total break time
+    const totalBreakTime = breakPeriods.reduce(
+      (sum, period) => sum + (period.duration || 0),
+      0
+    );
+
+    await ctx.db.patch(attendance._id, {
+      isOnBreak: false,
+      currentBreakStartTime: undefined,
+      breakPeriods,
+      breakTime: totalBreakTime,
+      updatedAt: Date.now(),
+    });
+
+    return attendance._id;
+  },
+});
+
+// Get penalties for employee
+export const getEmployeePenalties = query({
+  args: {
+    employeeId: v.id("users"),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const limit = args.limit || 30;
+    const penalties = await ctx.db
+      .query("penalties")
+      .withIndex("by_employee", (q) => q.eq("employeeId", args.employeeId))
+      .collect();
+
+    return penalties.sort((a, b) => b.createdAt - a.createdAt).slice(0, limit);
+  },
+});
+
+// Get total penalty points for employee
+export const getTotalPenaltyPoints = query({
+  args: {
+    employeeId: v.id("users"),
+    month: v.optional(v.string()), // Format: "2025-01"
+  },
+  handler: async (ctx, args) => {
+    const penalties = await ctx.db
+      .query("penalties")
+      .withIndex("by_employee", (q) => q.eq("employeeId", args.employeeId))
+      .collect();
+
+    let filtered = penalties;
+    if (args.month) {
+      filtered = penalties.filter((p) => p.date.startsWith(args.month!));
+    }
+
+    const totalPoints = filtered.reduce((sum, p) => sum + p.points, 0);
+    const byType = filtered.reduce((acc, p) => {
+      acc[p.type] = (acc[p.type] || 0) + p.points;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return {
+      totalPoints,
+      byType,
+      count: filtered.length,
+    };
   },
 });

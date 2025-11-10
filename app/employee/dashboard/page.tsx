@@ -6,14 +6,14 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { WorkTimer } from "@/components/employee/work-timer";
-import { BreakTimer } from "@/components/employee/break-timer";
+import { AttendanceTracker } from "@/components/employee/attendance-tracker";
 import { TimeLogCard } from "@/components/employee/time-log-card";
 import { WorkLogForm } from "@/components/employee/work-log-form";
 import { WorkLogList } from "@/components/employee/work-log-list";
 import { useSession } from "@/components/providers/session-provider";
 import type { WorkLogDoc } from "@/lib/types";
 import type { Id } from "@/convex/_generated/dataModel";
+import { format } from "date-fns";
 
 export default function EmployeeDashboard() {
   const router = useRouter();
@@ -26,11 +26,22 @@ export default function EmployeeDashboard() {
       api.workLogs.listForEmployee,
       user ? { employeeId: user._id as Id<"users"> } : "skip"
     ) ?? [];
-  const timeLogs =
-    useQuery(
-      api.timeLogs.listForEmployee,
-      user ? { employeeId: user._id as Id<"users"> } : "skip"
-    ) ?? [];
+
+  const todayAttendance = useQuery(
+    api.attendance.getTodayAttendance,
+    user ? { employeeId: user._id as Id<"users"> } : "skip"
+  );
+
+  const currentMonth = format(new Date(), "yyyy-MM");
+  const monthlyReport = useQuery(
+    api.attendance.getMonthlyReport,
+    user ? { employeeId: user._id as Id<"users">, month: currentMonth } : "skip"
+  );
+
+  const penaltyStats = useQuery(
+    api.attendance.getTotalPenaltyPoints,
+    user ? { employeeId: user._id as Id<"users">, month: currentMonth } : "skip"
+  );
 
   useEffect(() => {
     if (!hydrated) return;
@@ -60,16 +71,27 @@ export default function EmployeeDashboard() {
   };
 
   const quickStats = useMemo(() => {
-    if (timeLogs.length === 0) {
-      return { hoursToday: 0, breakTime: 0, weeklyTotal: 0 };
-    }
-    const hoursToday = timeLogs[0]?.totalHours ?? 0;
-    const breakTime = timeLogs[0]?.breakTime ?? 0;
-    const weeklyTotal = timeLogs
-      .slice(0, 5)
-      .reduce((sum, log) => sum + log.totalHours, 0);
-    return { hoursToday, breakTime, weeklyTotal };
-  }, [timeLogs]);
+    const workingHoursToday =
+      todayAttendance?.workingHours ?? todayAttendance?.totalHours ?? 0;
+    const breakTimeToday = todayAttendance?.breakTime ?? 0;
+    const monthlyHours = monthlyReport?.stats.totalHours ?? 0;
+    const monthlyPenalties = penaltyStats?.totalPoints ?? 0;
+
+    return {
+      workingHoursToday,
+      breakTimeToday,
+      monthlyHours,
+      monthlyPenalties,
+      isCheckedIn: todayAttendance?.checkIn && !todayAttendance?.checkOut,
+      isOnBreak: todayAttendance?.isOnBreak ?? false,
+    };
+  }, [todayAttendance, monthlyReport, penaltyStats]);
+
+  const formatHours = (hours: number) => {
+    const h = Math.floor(hours);
+    const m = Math.round((hours - h) * 60);
+    return `${h}h ${m}m`;
+  };
 
   const sortedWorkLogs: WorkLogDoc[] = [...workLogs]
     .sort((a, b) => (a.insertedAt ?? 0) - (b.insertedAt ?? 0))
@@ -99,43 +121,74 @@ export default function EmployeeDashboard() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-6">
-            <WorkTimer />
-            <BreakTimer />
+            {/* Attendance Tracker (replaces WorkTimer and BreakTimer) */}
+            <AttendanceTracker employeeId={user._id as Id<"users">} />
+
             <WorkLogForm onSubmit={handleAddWorkLog} />
             <WorkLogList logs={sortedWorkLogs} onDelete={handleDeleteWorkLog} />
-            <TimeLogCard logs={timeLogs} />
           </div>
 
           <div className="space-y-6">
+            {/* Quick Stats Card */}
             <Card className="p-6">
               <h3 className="text-lg font-semibold text-foreground mb-4">
-                Quick Stats
+                📊 Quick Stats
               </h3>
               <div className="space-y-4">
+                {/* Today's Working Hours */}
                 <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                  <p className="text-xs text-muted-foreground mb-1">
-                    Hours Today
-                  </p>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-xs text-muted-foreground">
+                      Working Hours Today
+                    </p>
+                    {quickStats.isCheckedIn && (
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                        <span className="text-xs text-green-600 dark:text-green-400">
+                          {quickStats.isOnBreak ? "On Break" : "Active"}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                   <p className="text-3xl font-bold text-green-700 dark:text-green-400">
-                    {quickStats.hoursToday.toFixed(1)}h
+                    {formatHours(quickStats.workingHoursToday)}
                   </p>
                 </div>
+
+                {/* Break Time Today */}
                 <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
                   <p className="text-xs text-muted-foreground mb-1">
-                    Break Time
+                    Break Time Today
                   </p>
                   <p className="text-3xl font-bold text-amber-700 dark:text-amber-400">
-                    {quickStats.breakTime}m
+                    {quickStats.breakTimeToday}m
                   </p>
                 </div>
-                <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+
+                {/* Monthly Hours */}
+                <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                   <p className="text-xs text-muted-foreground mb-1">
-                    Weekly Total
+                    Monthly Total
                   </p>
-                  <p className="text-3xl font-bold text-primary">
-                    {quickStats.weeklyTotal.toFixed(1)}h
+                  <p className="text-3xl font-bold text-blue-700 dark:text-blue-400">
+                    {formatHours(quickStats.monthlyHours)}
                   </p>
                 </div>
+
+                {/* Penalty Points */}
+                {quickStats.monthlyPenalties > 0 && (
+                  <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                    <p className="text-xs text-muted-foreground mb-1">
+                      Penalty Points
+                    </p>
+                    <p className="text-3xl font-bold text-red-700 dark:text-red-400">
+                      {quickStats.monthlyPenalties}
+                    </p>
+                    <p className="text-xs text-red-600 dark:text-red-500 mt-1">
+                      This month
+                    </p>
+                  </div>
+                )}
               </div>
             </Card>
 
